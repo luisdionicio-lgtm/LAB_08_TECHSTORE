@@ -1,0 +1,7 @@
+.git
+.env
+.docx_media
+.docx_render
+__pycache__
+*.pyc
+

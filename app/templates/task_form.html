@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if task else 'Crear' }} tarea | GLAB 07{% endblock %}
+{% block content %}
+<section class="form-layout">
+  <aside class="form-aside">
+    <a class="back-link" href="{{ url_for('tasks') }}">← Volver al tablero</a>
+    <p class="eyebrow light">{{ 'Actualizar registro' if task else 'Nuevo registro' }}</p>
+    <h1>{{ 'Dale un nuevo impulso' if task else 'Convierte una idea en acción' }}</h1>
+    <p>{{ 'Actualiza la información y el estado de esta tarea.' if task else 'Registra una tarea clara para mantener el avance visible para todo el equipo.' }}</p>
+    <ol class="form-steps">
+      <li class="active"><span>1</span><div><strong>Información</strong><small>Título y descripción</small></div></li>
+      <li class="{{ 'active' if task else '' }}"><span>2</span><div><strong>Estado</strong><small>Seguimiento del avance</small></div></li>
+      <li><span>3</span><div><strong>Guardar</strong><small>Persistir en PostgreSQL</small></div></li>
+    </ol>
+  </aside>
+  <section class="form-card">
+    <div class="form-card-heading">
+      <span class="form-icon" aria-hidden="true">{{ '✎' if task else '+' }}</span>
+      <div><p class="eyebrow">Formulario de tarea</p><h2>{{ 'Editar tarea' if task else 'Crear tarea' }}</h2></div>
+    </div>
+  <form method="post" class="stack">
+    <label for="title">Título <span class="required">Obligatorio</span></label>
+    <div class="input-wrap plain">
+      <input id="title" name="title" maxlength="160" placeholder="Ej. Validar el balanceo Round Robin" required value="{{ task.title if task else '' }}">
+      <small class="char-count"><span data-char-count>0</span>/160</small>
+    </div>
+    <label for="description">Descripción <span class="optional">Opcional</span></label>
+    <div class="input-wrap plain">
+      <textarea id="description" name="description" rows="6" placeholder="Añade contexto, criterios o próximos pasos...">{{ task.description if task else '' }}</textarea>
+    </div>
+    {% if task %}
+      <label class="status-switch">
+        <input type="checkbox" name="completed" {% if task.completed %}checked{% endif %}>
+        <span class="switch" aria-hidden="true"><i></i></span>
+        <span><strong>Marcar como completada</strong><small>La tarea aparecerá dentro del progreso finalizado.</small></span>
+      </label>
+    {% endif %}
+    <div class="form-actions">
+      <a class="secondary-button" href="{{ url_for('tasks') }}">Cancelar</a>
+      <button class="primary-button" type="submit">Guardar tarea <span aria-hidden="true">→</span></button>
+    </div>
+  </form>
+  </section>
+</section>
+{% endblock %}

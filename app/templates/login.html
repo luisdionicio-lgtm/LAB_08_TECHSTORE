@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesion | GLAB 07{% endblock %}
+{% block body_class %}login-page{% endblock %}
+{% block content %}
+<section class="login-shell">
+  <div class="welcome-panel">
+    <div class="orb orb-one"></div>
+    <div class="orb orb-two"></div>
+    <div class="welcome-content">
+      <span class="hero-tag"><i></i> Infraestructura disponible</span>
+      <p class="eyebrow light">Experiencia local confiable</p>
+      <h1>Tu trabajo fluye.<br><span>Nosotros distribuimos.</span></h1>
+      <p class="hero-copy">Un entorno claro y seguro para gestionar tareas mientras Nginx reparte cada solicitud entre tres instancias activas.</p>
+
+      <div class="network-map" aria-label="Diagrama del balanceo local">
+        <div class="network-client"><span>Cliente</span><small>Navegador</small></div>
+        <div class="flow-line"><i></i></div>
+        <div class="network-core"><span>Nginx</span><small>Round Robin</small></div>
+        <div class="server-lines" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="server-stack">
+          <span><i></i>Backend 1</span>
+          <span><i></i>Backend 2</span>
+          <span><i></i>Backend 3</span>
+        </div>
+      </div>
+
+      <div class="trust-row">
+        <span><i>✓</i> PostgreSQL</span>
+        <span><i>✓</i> Sesión compartida</span>
+        <span><i>✓</i> Estado saludable</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-panel">
+    <section class="auth-card">
+      <div class="auth-heading">
+        <span class="auth-symbol" aria-hidden="true">N</span>
+        <div>
+          <p class="eyebrow">Acceso seguro</p>
+          <h2>Bienvenido de nuevo</h2>
+        </div>
+      </div>
+      <p class="muted">Ingresa a tu espacio de trabajo para administrar las tareas del laboratorio.</p>
+      <form method="post" class="stack">
+        <label for="username">Usuario</label>
+        <div class="input-wrap">
+          <span class="input-icon" aria-hidden="true">@</span>
+          <input id="username" name="username" autocomplete="username" placeholder="Ingresa tu usuario" required autofocus>
+        </div>
+        <label for="password">Contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon lock-icon" aria-hidden="true"></span>
+          <input id="password" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required>
+          <button class="password-toggle" type="button" aria-label="Mostrar contraseña" data-password-toggle>Ver</button>
+        </div>
+        <button class="primary-button login-button" type="submit">
+          <span>Ingresar al panel</span><span aria-hidden="true">→</span>
+        </button>
+      </form>
+      <div class="credentials">
+        <span>Cuenta de demostración</span>
+        <code>admin</code><b>/</b><code>admin123</code>
+      </div>
+      <p class="privacy-note"><i aria-hidden="true"></i>Conexión local · Tus datos permanecen en este entorno</p>
+    </section>
+  </div>
+</section>
+{% endblock %}

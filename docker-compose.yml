@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lab07
+      POSTGRES_USER: lab07
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lab07-db-password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab07 -d lab07"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - lab07_postgres:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-lab07-cambie-esta-clave}
+      DATABASE_URL: postgresql://lab07:${POSTGRES_PASSWORD:-lab07-db-password}@db:5432/lab07
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+      - "8081:8081"
+      - "8082:8082"
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  lab07_postgres:

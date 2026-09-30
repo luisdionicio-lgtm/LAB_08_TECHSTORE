@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Tareas | GLAB 07{% endblock %}
+{% block content %}
+<section class="dashboard-hero">
+  <div class="hero-heading">
+    <div>
+      <p class="eyebrow">Panel de trabajo</p>
+      <h1>Hola, {{ g.user }} <span aria-hidden="true">✦</span></h1>
+      <p class="muted">Organiza el laboratorio y observa el monolito balanceado en acción.</p>
+    </div>
+    <a class="primary-button add-button" href="{{ url_for('create_task') }}"><span aria-hidden="true">＋</span>Nueva tarea</a>
+  </div>
+
+  <div class="stat-grid">
+    <article class="stat-card total">
+      <span class="stat-icon" aria-hidden="true">◇</span>
+      <div><strong>{{ stats.total }}</strong><span>Tareas totales</span></div>
+      <small>Registros en PostgreSQL</small>
+    </article>
+    <article class="stat-card pending">
+      <span class="stat-icon" aria-hidden="true">◷</span>
+      <div><strong>{{ stats.pending }}</strong><span>Pendientes</span></div>
+      <small>Próximas por completar</small>
+    </article>
+    <article class="stat-card complete">
+      <span class="stat-icon" aria-hidden="true">✓</span>
+      <div><strong>{{ stats.completed }}</strong><span>Completadas</span></div>
+      <small>Avance confirmado</small>
+    </article>
+    <article class="stat-card progress-card">
+      <div class="progress-ring" style="--progress: {{ stats.progress }}">
+        <span>{{ stats.progress }}%</span>
+      </div>
+      <div><strong>Progreso</strong><span>del tablero</span></div>
+      <small>Actualización automática</small>
+    </article>
+  </div>
+</section>
+
+<section class="workspace-panel">
+  <div class="workspace-heading">
+    <div>
+      <p class="eyebrow">CRUD compartido</p>
+      <h2>Mis tareas</h2>
+    </div>
+    <div class="task-tools">
+      <label class="search-box">
+        <span aria-hidden="true"></span>
+        <input type="search" placeholder="Buscar una tarea" aria-label="Buscar una tarea" data-task-search>
+      </label>
+      <div class="filter-group" aria-label="Filtrar tareas">
+        <button type="button" class="filter-button active" data-filter="all">Todas</button>
+        <button type="button" class="filter-button" data-filter="pending">Pendientes</button>
+        <button type="button" class="filter-button" data-filter="done">Completadas</button>
+      </div>
+    </div>
+  </div>
+
+{% if tasks %}
+  <div class="task-grid" data-task-grid>
+    {% for task in tasks %}
+      <article class="task-card" data-status="{{ 'done' if task.completed else 'pending' }}" data-search="{{ task.title|lower }} {{ task.description|lower }}">
+        <div class="task-card-top">
+          <div class="task-status {{ 'done' if task.completed else 'pending' }}">
+            <i></i>{{ 'Completada' if task.completed else 'Pendiente' }}
+          </div>
+          <span class="task-id">#{{ '%03d'|format(task.id) }}</span>
+        </div>
+        <h2>{{ task.title }}</h2>
+        <p>{{ task.description or 'Sin descripción.' }}</p>
+        <div class="task-meta"><span>Actualizada</span><time>{{ task.updated_at.strftime('%d/%m/%Y · %H:%M') }}</time></div>
+        <div class="actions">
+          <a class="edit-link" href="{{ url_for('edit_task', task_id=task.id) }}"><span aria-hidden="true">✎</span>Editar</a>
+          <form method="post" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('Eliminar esta tarea?')">
+            <button class="danger-link" type="submit"><span aria-hidden="true">×</span>Eliminar</button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+  <div class="no-results" data-no-results hidden>
+    <span aria-hidden="true">⌕</span>
+    <h3>No encontramos coincidencias</h3>
+    <p>Prueba con otro texto o cambia el filtro.</p>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-illustration" aria-hidden="true"><span>✓</span></div>
+    <h2>Tu tablero está listo</h2>
+    <p>Crea el primer registro para demostrar las operaciones del CRUD.</p>
+    <a class="primary-button" href="{{ url_for('create_task') }}">Crear primera tarea</a>
+  </div>
+{% endif %}
+</section>
+{% endblock %}
