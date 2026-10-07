@@ -26,6 +26,7 @@ Nginx distribuye las solicitudes mediante Round Robin. Las tres instancias ejecu
 
 - Inicio de sesión local.
 - Inicio de sesión con Google y GitHub mediante OAuth 2.0 / OpenID Connect.
+- MFA TOTP obligatorio después de autenticar con GitHub, con códigos de 6 dígitos que cambian cada 30 segundos y máximo 3 intentos.
 - Token JWT interno válido por 60 minutos para ambos métodos de acceso.
 - Bloqueo temporal de 1 minuto después de tres intentos fallidos.
 - Tienda y rol asignados a cada usuario.
@@ -78,6 +79,8 @@ GITHUB_CLIENT_SECRET=su_client_secret
 GITHUB_REDIRECT_URI=http://localhost:8080/auth/github/callback
 GITHUB_DEFAULT_STORE=TechStore Lima Centro
 ```
+
+En el primer acceso con GitHub, TechStore muestra un QR para vincular Google Authenticator o cualquier aplicación TOTP compatible. El JWT se crea únicamente después de ingresar un código MFA válido.
 
 ## Configurar Google OAuth
 

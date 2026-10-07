@@ -1,6 +1,8 @@
 import os
 import json
 import re
+import base64
+from io import BytesIO
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
@@ -12,6 +14,8 @@ from urllib.request import Request, urlopen
 
 import psycopg
 import jwt
+import pyotp
+import qrcode
 from flask import Flask, abort, flash, g, jsonify, redirect, render_template, request, session, url_for
 from psycopg.rows import dict_row
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -85,6 +89,9 @@ def init_db():
                         role VARCHAR(40) NOT NULL DEFAULT 'VENTAS',
                         github_id VARCHAR(80),
                         google_id VARCHAR(255),
+                        mfa_secret VARCHAR(64),
+                        mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+                        mfa_failed_attempts INTEGER NOT NULL DEFAULT 0,
                         failed_attempts INTEGER NOT NULL DEFAULT 0,
                         locked_until TIMESTAMPTZ
                     );
@@ -111,6 +118,9 @@ def init_db():
                 conn.execute("UPDATE users SET role = 'VENTAS' WHERE role = 'EMPLEADO'")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id VARCHAR(80)")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255)")
+                conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret VARCHAR(64)")
+                conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE")
+                conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_failed_attempts INTEGER NOT NULL DEFAULT 0")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts INTEGER NOT NULL DEFAULT 0")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ")
                 conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS store_name VARCHAR(120) NOT NULL DEFAULT 'TechStore Lima Centro'")
@@ -237,6 +247,75 @@ def complete_login(user, provider):
         secure=False,
     )
     return response
+
+def start_mfa(user, provider):
+    session.clear()
+    session["pending_user_id"] = user["id"]
+    session["pending_auth_provider"] = provider
+    session["mfa_attempts"] = 0
+    return redirect(url_for("mfa_setup" if not user.get("mfa_enabled") else "mfa_verify"))
+
+def pending_mfa_user():
+    user_id = session.get("pending_user_id")
+    if not user_id:
+        return None
+    return get_db().execute("SELECT * FROM users WHERE id = %s", (user_id,)).fetchone()
+
+@app.route("/mfa/setup", methods=("GET", "POST"))
+def mfa_setup():
+    user = pending_mfa_user()
+    if user is None:
+        flash("Inicia el acceso con GitHub para configurar MFA.", "error")
+        return redirect(url_for("login"))
+    secret = user.get("mfa_secret")
+    if not secret:
+        secret = pyotp.random_base32()
+        with get_db() as conn:
+            conn.execute("UPDATE users SET mfa_secret = %s, mfa_enabled = FALSE, mfa_failed_attempts = 0 WHERE id = %s", (secret, user["id"]))
+    uri = pyotp.TOTP(secret).provisioning_uri(name=user["email"], issuer_name="TechStore")
+    qr = qrcode.make(uri)
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+    qr_data = base64.b64encode(buffer.getvalue()).decode("ascii")
+    if request.method == "POST":
+        return verify_mfa_code(user, secret, setup=True)
+    return render_template("mfa.html", setup=True, qr_data=qr_data, secret=secret, user=user)
+
+@app.route("/mfa/verify", methods=("GET", "POST"))
+def mfa_verify():
+    user = pending_mfa_user()
+    if user is None or not user.get("mfa_secret"):
+        flash("La sesión MFA no es válida. Inicia el acceso nuevamente.", "error")
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        return verify_mfa_code(user, user["mfa_secret"], setup=False)
+    return render_template("mfa.html", setup=False, user=user)
+
+def verify_mfa_code(user, secret, setup):
+    code = request.form.get("code", "").replace(" ", "")
+    if pyotp.TOTP(secret).verify(code, valid_window=1):
+        with get_db() as conn:
+            user = conn.execute("""
+                UPDATE users SET mfa_enabled = TRUE, mfa_failed_attempts = 0
+                WHERE id = %s RETURNING *
+            """, (user["id"],)).fetchone()
+        provider = session.get("pending_auth_provider", "github")
+        session.pop("pending_user_id", None)
+        session.pop("pending_auth_provider", None)
+        session.pop("mfa_attempts", None)
+        response = complete_login(user, provider)
+        flash("MFA verificado. Acceso concedido y JWT generado correctamente.", "success")
+        return response
+    attempts = session.get("mfa_attempts", 0) + 1
+    session["mfa_attempts"] = attempts
+    with get_db() as conn:
+        conn.execute("UPDATE users SET mfa_failed_attempts = %s WHERE id = %s", (attempts, user["id"]))
+    if attempts >= 3:
+        session.clear()
+        flash("Código MFA incorrecto. Alcanzaste el máximo de 3 intentos; inicia sesión nuevamente.", "error")
+        return redirect(url_for("login"))
+    flash(f"Código MFA incorrecto. Quedan {3 - attempts} intentos.", "error")
+    return redirect(url_for("mfa_setup" if setup else "mfa_verify"))
 
 @app.get("/health")
 def health():
@@ -373,7 +452,7 @@ def github_callback():
                     failed_attempts = 0, locked_until = NULL
                 WHERE id = %s RETURNING *
             """, (profile.get("name") or profile["login"], email, username, user["id"])).fetchone()
-    return complete_login(user, "github")
+    return start_mfa(user, "github")
 
 def google_request(url, data=None, token=None):
     headers = {"Accept": "application/json", "User-Agent": "TechStore-Lab08"}
@@ -640,7 +719,8 @@ def manage_users():
     users = get_db().execute("""
         SELECT id, username, full_name, email, store_name, role,
                github_id IS NOT NULL AS uses_github,
-               google_id IS NOT NULL AS uses_google
+               google_id IS NOT NULL AS uses_google,
+               mfa_enabled, mfa_failed_attempts
         FROM users ORDER BY id
     """).fetchall()
     return render_template("users.html", users=users, roles=ROLES)

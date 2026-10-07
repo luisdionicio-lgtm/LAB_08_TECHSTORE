@@ -29,10 +29,10 @@
     <div class="workspace-heading"><div><h2>Cuentas registradas</h2><p class="muted">Los cambios de perfil se aplican en el siguiente inicio de sesión.</p></div><strong class="user-count">{{ users|length }} usuarios</strong></div>
     <div class="user-table-wrap">
       <table class="user-table">
-        <thead><tr><th>Usuario</th><th>Proveedor</th><th>Asignación</th><th>Actualizar</th></tr></thead>
+        <thead><tr><th>Usuario</th><th>Proveedor y MFA</th><th>Asignación</th><th>Actualizar</th></tr></thead>
         <tbody>{% for user in users %}<tr>
           <td><strong>{{ user.full_name }}</strong><small>{{ user.username }} · {{ user.email }}</small></td>
-          <td><span class="provider-badge">{{ 'Google' if user.uses_google else ('GitHub' if user.uses_github else 'Básico') }}</span></td>
+          <td><span class="provider-badge">{{ 'Google' if user.uses_google else ('GitHub' if user.uses_github else 'Básico') }}</span><small>{{ 'MFA TOTP activo' if user.mfa_enabled else 'MFA pendiente' }}{% if user.mfa_failed_attempts %} · {{ user.mfa_failed_attempts }} intentos{% endif %}</small></td>
           <td><strong>{{ role_names.get(user.role, user.role) }}</strong><small>{{ user.store_name }}</small></td>
           <td><form method="post" action="{{ url_for('assign_user', user_id=user.id) }}" class="assignment-form"><select name="role" aria-label="Perfil de {{ user.username }}">{% for value, label in roles.items() %}<option value="{{ value }}" {% if user.role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><input name="store_name" value="{{ user.store_name }}" aria-label="Tienda de {{ user.username }}" required><button type="submit">Guardar</button></form></td>
         </tr>{% endfor %}</tbody>

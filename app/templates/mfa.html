@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Verificación MFA | TechStore{% endblock %}
+{% block body_class %}mfa-page{% endblock %}
+{% block content %}
+<section class="mfa-shell">
+  <div class="mfa-intro">
+    <span class="mfa-lock" aria-hidden="true"></span>
+    <h1>{{ 'Configura tu segundo factor' if setup else 'Verifica tu identidad' }}</h1>
+    <p>GitHub confirmó tu cuenta. Completa el segundo factor antes de que TechStore genere el JWT de 60 minutos.</p>
+    <ol class="mfa-flow">
+      <li class="done"><span>1</span><div><strong>GitHub OAuth</strong><small>Identidad principal validada</small></div></li>
+      <li class="active"><span>2</span><div><strong>Código TOTP</strong><small>6 dígitos · cambia cada 30 segundos</small></div></li>
+      <li><span>3</span><div><strong>JWT interno</strong><small>Se emite después de validar MFA</small></div></li>
+    </ol>
+  </div>
+  <div class="mfa-card">
+    {% if setup %}
+      <h2>Vincular Google Authenticator</h2>
+      <p class="muted">Escanea el código QR con Google Authenticator, Microsoft Authenticator, Authy o una aplicación TOTP compatible.</p>
+      <img class="mfa-qr" src="data:image/png;base64,{{ qr_data }}" alt="Código QR para configurar el segundo factor TOTP">
+      <details class="mfa-manual"><summary>No puedo escanear el QR</summary><p>Ingresa esta clave manualmente en tu aplicación:</p><code>{{ secret }}</code></details>
+    {% else %}
+      <h2>Código de seguridad</h2>
+      <p class="muted">Abre tu aplicación autenticadora e ingresa el código vigente.</p>
+    {% endif %}
+    <form method="post" class="mfa-form">
+      <label for="code">Código MFA de 6 dígitos</label>
+      <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
+      <button class="primary-button" type="submit">Verificar y acceder</button>
+    </form>
+    <p class="mfa-attempts">Máximo 3 intentos · usuario {{ user.username }}</p>
+  </div>
+</section>
+{% endblock %}

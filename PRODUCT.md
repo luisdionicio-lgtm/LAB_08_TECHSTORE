@@ -28,6 +28,8 @@ El proyecto se ejecuta con Docker Compose. Nginx recibe las solicitudes, aplica 
 - Sin infraestructura AWS.
 - Inicio de sesión básico por usuario o correo con validación de credenciales.
 - Inicio de sesión con Google y GitHub OAuth 2.0 configurado mediante variables de entorno.
+- Segundo factor TOTP obligatorio después de GitHub OAuth, compatible con Google Authenticator y limitado a tres intentos.
+- El JWT interno se emite únicamente después de completar correctamente el segundo factor.
 - Token JWT interno en cookie HttpOnly, válido durante 60 minutos y validado en cada ruta protegida.
 - Bloqueo de cuenta durante 1 minuto después de tres intentos fallidos; contador atómico para tres backends.
 - Tienda y rol asignados a cada usuario.

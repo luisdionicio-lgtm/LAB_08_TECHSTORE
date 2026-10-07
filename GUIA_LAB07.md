@@ -103,9 +103,51 @@ docker compose exec -T db psql -U lab07 -d lab07 -c "UPDATE users SET failed_att
 
 ### Captura 6 — Retorno desde GitHub
 
-- Capturar el inventario después de autorizar.
-- La cabecera debe indicar `Sesión GitHub OAuth protegida con JWT`.
-- Pie sugerido: **Figura 6. Usuario autenticado con GitHub y sesión interna JWT.**
+- Después de autorizar GitHub, TechStore solicita configurar o verificar MFA antes de entrar al inventario.
+- El JWT todavía no se genera en este punto.
+- Pie sugerido: **Figura 6. Identidad principal validada mediante GitHub OAuth.**
+
+## 7.1 MFA TOTP después de GitHub
+
+En el primer acceso social, la pantalla muestra el flujo **GitHub OAuth → Código TOTP → JWT interno**.
+
+1. Instale Google Authenticator, Microsoft Authenticator, Authy u otra aplicación TOTP.
+2. Escanee el QR mostrado por TechStore.
+3. La aplicación móvil agregará una cuenta llamada `TechStore`.
+4. Ingrese el código de 6 dígitos vigente. Cambia cada 30 segundos.
+5. Si el código es correcto, TechStore activa MFA y genera el JWT de 60 minutos.
+
+### Captura 6A — Configuración MFA
+
+- Mostrar el QR y el flujo de tres etapas.
+- No desplegar la opción de clave manual durante la captura.
+- Pie sugerido: **Figura 6A. Vinculación del segundo factor TOTP después de autenticar con GitHub.**
+
+### Captura 6B — Código incorrecto
+
+- Ingresar un código incorrecto una vez.
+- Mostrar el aviso `Código MFA incorrecto. Quedan 2 intentos.`
+- Pie sugerido: **Figura 6B. Control de intentos fallidos durante la verificación MFA.**
+
+### Captura 6C — MFA correcto y JWT
+
+- Ingresar el código vigente de la aplicación autenticadora.
+- Capturar el inventario con el mensaje de MFA verificado y `Sesión GitHub OAuth protegida con JWT`.
+- Pie sugerido: **Figura 6C. Acceso concedido y JWT emitido después de validar el segundo factor.**
+
+### Captura 6D — Estado MFA en administración
+
+- Cerrar sesión, entrar como `admin / Admin123!` y abrir **Usuarios y roles**.
+- La cuenta GitHub debe indicar `MFA TOTP activo`.
+- Pie sugerido: **Figura 6D. Usuario GitHub con segundo factor TOTP activo en PostgreSQL.**
+
+Para repetir la configuración del QR durante una demostración, ejecute reemplazando el usuario:
+
+```powershell
+docker compose exec -T db psql -U lab07 -d lab07 -c "UPDATE users SET mfa_secret=NULL, mfa_enabled=FALSE, mfa_failed_attempts=0 WHERE username='github_SU_USUARIO';"
+```
+
+Luego cierre sesión y vuelva a ingresar con GitHub.
 
 ## 7A. Autenticación con Google
 

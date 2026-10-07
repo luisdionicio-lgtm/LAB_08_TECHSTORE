@@ -419,6 +419,31 @@ body { background: #f4f1e8; color: #17232c; overflow-x: hidden; caret-color: #16
 .assignment-form { display: grid; grid-template-columns: 1fr; gap: .45rem; min-width: 190px; }
 .assignment-form button { min-height: 36px; border: 0; border-radius: 8px; color: white; background: #176f82; font-weight: 750; cursor: pointer; }
 .assignment-form button:hover { background: #0c5666; }
+.mfa-page .container { display: grid; place-items: center; }
+.mfa-shell { width: min(920px, 100%); display: grid; grid-template-columns: .9fr 1.1fr; overflow: hidden; border-radius: 18px; background: white; box-shadow: var(--shadow); }
+.mfa-intro { padding: 2.2rem; color: white; background: #17212a; }
+.mfa-intro h1 { color: white; font-size: clamp(2rem, 4vw, 3rem); }
+.mfa-intro > p { color: #afbec8; line-height: 1.6; }
+.mfa-lock { display: block; width: 34px; height: 29px; margin-bottom: 1.5rem; border: 3px solid #72dfcf; border-radius: 7px; position: relative; }
+.mfa-lock::before { content: ""; position: absolute; width: 20px; height: 16px; left: 4px; bottom: 24px; border: 3px solid #72dfcf; border-bottom: 0; border-radius: 12px 12px 0 0; }
+.mfa-flow { display: grid; gap: 1rem; margin: 2rem 0 0; padding: 0; list-style: none; }
+.mfa-flow li { display: flex; align-items: center; gap: .8rem; color: #8195a2; }
+.mfa-flow li > span { flex: 0 0 30px; height: 30px; display: grid; place-items: center; border: 1px solid #53636e; border-radius: 50%; font-size: .72rem; font-weight: 800; }
+.mfa-flow li div { display: grid; gap: .15rem; }
+.mfa-flow small { font-size: .7rem; }
+.mfa-flow .done, .mfa-flow .active { color: white; }
+.mfa-flow .done > span { color: #073c40; background: #72dfcf; border-color: #72dfcf; }
+.mfa-flow .active > span { color: #111820; background: #e6c84f; border-color: #e6c84f; }
+.mfa-card { padding: clamp(1.5rem, 5vw, 3rem); text-align: center; }
+.mfa-card h2 { font-size: 1.75rem; }
+.mfa-card > p { max-width: 48ch; margin-inline: auto; line-height: 1.55; }
+.mfa-qr { width: 210px; height: 210px; margin: 1rem auto; padding: .5rem; border: 1px solid #dbe3e8; border-radius: 12px; }
+.mfa-manual { margin: 1rem 0; padding: .8rem; border-radius: 10px; background: #f0f4f6; text-align: left; font-size: .75rem; }
+.mfa-manual summary { font-weight: 800; cursor: pointer; }
+.mfa-manual code { display: block; margin-top: .5rem; color: #087f8c; overflow-wrap: anywhere; }
+.mfa-form { display: grid; gap: .75rem; margin-top: 1.25rem; text-align: left; }
+.mfa-form input { width: 100%; padding: .9rem; border: 1px solid #bccbd4; border-radius: 10px; text-align: center; font-size: 1.5rem; font-variant-numeric: tabular-nums; letter-spacing: .35em; }
+.mfa-attempts { color: #758691; font-size: .7rem; }
 
 @media (max-width: 900px) {
   .inventory-stats { grid-template-columns: 1fr 1fr; }
@@ -428,6 +453,7 @@ body { background: #f4f1e8; color: #17232c; overflow-x: hidden; caret-color: #16
   .field-grid.two, .field-grid.three { grid-template-columns: 1fr; }
   .users-layout { grid-template-columns: 1fr; }
   .user-create-panel { position: static; }
+  .mfa-shell { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
