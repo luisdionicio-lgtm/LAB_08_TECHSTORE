@@ -27,7 +27,7 @@ El proyecto se ejecuta con Docker Compose. Nginx recibe las solicitudes, aplica 
 - Ejecución exclusivamente local mediante Docker.
 - Sin infraestructura AWS.
 - Inicio de sesión básico por usuario o correo con validación de credenciales.
-- Inicio de sesión con GitHub OAuth 2.0 configurado mediante variables de entorno.
+- Inicio de sesión con Google y GitHub OAuth 2.0 configurado mediante variables de entorno.
 - Token JWT interno en cookie HttpOnly, válido durante 60 minutos y validado en cada ruta protegida.
 - Bloqueo de cuenta durante 15 minutos después de tres intentos fallidos; contador atómico para tres backends.
 - Tienda y rol asignados a cada usuario.

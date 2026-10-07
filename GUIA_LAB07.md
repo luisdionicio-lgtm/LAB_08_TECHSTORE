@@ -2,7 +2,7 @@
 
 ## 1. Objetivo del laboratorio
 
-Implementar una tienda tecnológica local con autenticación básica y GitHub OAuth, emisión de JWT, bloqueo después de tres credenciales incorrectas y un inventario compartido. La arquitectura usa Docker Compose, Nginx como balanceador Round Robin, tres procesos Flask/Gunicorn y PostgreSQL. No se despliega ningún recurso en AWS; únicamente se conserva el patrón arquitectónico distribuido.
+Implementar una tienda tecnológica local con autenticación básica, Google y GitHub OAuth, emisión de JWT, bloqueo después de tres credenciales incorrectas y un inventario compartido. La arquitectura usa Docker Compose, Nginx como balanceador Round Robin, tres procesos Flask/Gunicorn y PostgreSQL. No se despliega ningún recurso en AWS; únicamente se conserva el patrón arquitectónico distribuido.
 
 ## 2. Preparación
 
@@ -13,6 +13,9 @@ Implementar una tienda tecnológica local con autenticación básica y GitHub OA
 5. En GitHub, la OAuth App debe usar:
    - Homepage URL: `http://localhost:8080`
    - Authorization callback URL: `http://localhost:8080/auth/github/callback`
+6. En Google Cloud, el cliente OAuth de tipo Aplicación web debe usar:
+   - Origen autorizado: `http://localhost:8080`
+   - URI de redireccionamiento: `http://localhost:8080/auth/google/callback`
 
 ## 3. Construcción y ejecución
 
@@ -100,6 +103,27 @@ docker compose exec -T db psql -U lab07 -d lab07 -c "UPDATE users SET failed_att
 - La cabecera debe indicar `Sesión GitHub OAuth protegida con JWT`.
 - Pie sugerido: **Figura 6. Usuario autenticado con GitHub y sesión interna JWT.**
 
+## 7A. Autenticación con Google
+
+1. Seleccionar **Ingresar con Google**.
+2. Elegir una cuenta en la pantalla oficial de Google.
+3. Autorizar el acceso al perfil básico y correo.
+4. Google devuelve el navegador a `/auth/google/callback`.
+5. TechStore valida el estado OAuth, exige un correo verificado, crea o actualiza el usuario y emite su JWT interno.
+
+### Captura 6A — Selección o autorización de Google
+
+- Mostrar la pantalla oficial de Google y el nombre de la aplicación.
+- Ocultar correo, foto u otros datos personales si fuera necesario.
+- Nunca mostrar Client Secret, access token, JWT ni contenido de `.env`.
+- Pie sugerido: **Figura 6A. Autenticación mediante Google OAuth y OpenID Connect.**
+
+### Captura 6B — Retorno desde Google
+
+- Capturar el inventario después del retorno.
+- Debe aparecer `Sesión Google OAuth protegida con JWT`.
+- Pie sugerido: **Figura 6B. Sesión interna JWT generada después del acceso con Google.**
+
 ## 8. CRUD del inventario
 
 1. Seleccionar **Registrar producto**.
@@ -148,6 +172,7 @@ Actualizar el navegador varias veces y observar el texto `Solicitud atendida por
 - JWT de 60 minutos en cookie `HttpOnly`.
 - Bloqueo en el tercer intento y duración de 15 minutos.
 - Inicio de sesión mediante GitHub OAuth.
+- Inicio de sesión mediante Google OAuth y OpenID Connect.
 - Tienda `TechStore Lima Centro` asignada.
 - Crear, listar, buscar, editar y eliminar productos.
 - Nginx distribuyendo solicitudes entre tres backends.

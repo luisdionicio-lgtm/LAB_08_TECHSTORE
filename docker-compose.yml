@@ -25,6 +25,10 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-http://localhost:8080/auth/github/callback}
       GITHUB_DEFAULT_STORE: ${GITHUB_DEFAULT_STORE:-TechStore Lima Centro}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/auth/google/callback}
+      GOOGLE_DEFAULT_STORE: ${GOOGLE_DEFAULT_STORE:-TechStore Lima Centro}
     depends_on:
       db:
         condition: service_healthy

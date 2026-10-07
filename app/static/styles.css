@@ -352,6 +352,12 @@ body { background: #f4f1e8; color: #17232c; overflow-x: hidden; caret-color: #16
 .github-button svg { width: 20px; height: 20px; }
 .github-button:hover { background: #0f1419; }
 .github-button.disabled { color: #74818a; background: #e5eaed; pointer-events: none; }
+.social-login-stack { display: grid; gap: .65rem; }
+.social-button { display: flex; align-items: center; justify-content: center; gap: .65rem; min-height: 48px; padding: .82rem 1rem; border-radius: 11px; font-weight: 800; text-decoration: none; }
+.social-button svg { width: 20px; height: 20px; flex: 0 0 auto; }
+.google-button { color: #27313a; background: white; border: 1px solid #cfd8df; }
+.google-button:hover { background: #f6f8fa; border-color: #9cabb6; }
+.google-button.disabled { color: #74818a; background: #e5eaed; border-color: transparent; pointer-events: none; }
 .auth-features { display: grid; gap: .65rem; margin: 1rem 0 0; padding: 1rem 0 0; border-top: 1px solid #e0e6e9; list-style: none; }
 .auth-features li { display: flex; justify-content: space-between; gap: 1rem; font-size: .7rem; }
 .auth-features strong { color: #344957; }

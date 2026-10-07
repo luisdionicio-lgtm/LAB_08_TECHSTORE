@@ -8,7 +8,7 @@
     <a href="https://unsplash.com/photos/a-computer-desk-with-a-monitor-keyboard-and-mouse-JomkRNkzKhE" target="_blank" rel="noreferrer">Imagen referencial</a>
   </div>
   <div class="hero-heading">
-    <div><h1>Inventario tecnológico</h1><p class="muted">{{ g.store_name }} · Sesión {{ 'GitHub OAuth' if g.auth_provider == 'github' else 'básica' }} protegida con JWT.</p></div>
+    <div><h1>Inventario tecnológico</h1><p class="muted">{{ g.store_name }} · Sesión {{ {'github':'GitHub OAuth','google':'Google OAuth'}.get(g.auth_provider, 'básica') }} protegida con JWT.</p></div>
     <a class="primary-button add-button" href="{{ url_for('create_product') }}">Registrar producto</a>
   </div>
   <div class="architecture-strip" aria-label="Flujo de la arquitectura local">

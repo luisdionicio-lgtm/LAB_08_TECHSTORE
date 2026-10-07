@@ -25,7 +25,7 @@ Nginx distribuye las solicitudes mediante Round Robin. Las tres instancias ejecu
 ## Funcionalidades
 
 - Inicio de sesión local.
-- Inicio de sesión con GitHub mediante OAuth 2.0.
+- Inicio de sesión con Google y GitHub mediante OAuth 2.0 / OpenID Connect.
 - Token JWT interno válido por 60 minutos para ambos métodos de acceso.
 - Bloqueo temporal de 15 minutos después de tres intentos fallidos.
 - Tienda y rol asignados a cada usuario.
@@ -74,6 +74,24 @@ GITHUB_CLIENT_SECRET=su_client_secret
 GITHUB_REDIRECT_URI=http://localhost:8080/auth/github/callback
 GITHUB_DEFAULT_STORE=TechStore Lima Centro
 ```
+
+## Configurar Google OAuth
+
+En Google Cloud Console cree un cliente OAuth 2.0 de tipo **Aplicación web** y configure:
+
+- Origen autorizado: `http://localhost:8080`
+- URI de redireccionamiento autorizado: `http://localhost:8080/auth/google/callback`
+
+Copie las credenciales únicamente en `.env`:
+
+```dotenv
+GOOGLE_CLIENT_ID=su_client_id
+GOOGLE_CLIENT_SECRET=su_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:8080/auth/google/callback
+GOOGLE_DEFAULT_STORE=TechStore Lima Centro
+```
+
+Después reconstruya el servicio con `docker compose up --build -d`.
 
 Reconstruya el contenedor para cargar las variables:
 

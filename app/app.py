@@ -25,6 +25,10 @@ app.config.update(
     GITHUB_CLIENT_SECRET=os.environ.get("GITHUB_CLIENT_SECRET", ""),
     GITHUB_REDIRECT_URI=os.environ.get("GITHUB_REDIRECT_URI", "http://localhost:8080/auth/github/callback"),
     GITHUB_DEFAULT_STORE=os.environ.get("GITHUB_DEFAULT_STORE", "TechStore Lima Centro"),
+    GOOGLE_CLIENT_ID=os.environ.get("GOOGLE_CLIENT_ID", ""),
+    GOOGLE_CLIENT_SECRET=os.environ.get("GOOGLE_CLIENT_SECRET", ""),
+    GOOGLE_REDIRECT_URI=os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:8080/auth/google/callback"),
+    GOOGLE_DEFAULT_STORE=os.environ.get("GOOGLE_DEFAULT_STORE", "TechStore Lima Centro"),
 )
 
 LOCKOUT_MINUTES = 15
@@ -66,6 +70,7 @@ def init_db():
                         store_name VARCHAR(120) NOT NULL DEFAULT 'TechStore Lima Centro',
                         role VARCHAR(40) NOT NULL DEFAULT 'EMPLEADO',
                         github_id VARCHAR(80),
+                        google_id VARCHAR(255),
                         failed_attempts INTEGER NOT NULL DEFAULT 0,
                         locked_until TIMESTAMPTZ
                     );
@@ -89,9 +94,11 @@ def init_db():
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS store_name VARCHAR(120) NOT NULL DEFAULT 'TechStore Lima Centro'")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(40) NOT NULL DEFAULT 'EMPLEADO'")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id VARCHAR(80)")
+                conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255)")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts INTEGER NOT NULL DEFAULT 0")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ")
                 conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_github_id_unique ON users (github_id) WHERE github_id IS NOT NULL")
+                conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_unique ON users (google_id) WHERE google_id IS NOT NULL")
                 conn.execute(
                     """
                     INSERT INTO users (username, password_hash, full_name, email, store_name, role)
@@ -156,6 +163,7 @@ def template_context():
     return {
         "backend_id": app.config["BACKEND_ID"],
         "github_enabled": bool(app.config["GITHUB_CLIENT_ID"] and app.config["GITHUB_CLIENT_SECRET"]),
+        "google_enabled": bool(app.config["GOOGLE_CLIENT_ID"] and app.config["GOOGLE_CLIENT_SECRET"]),
     }
 
 def issue_internal_jwt(user, provider):
@@ -332,6 +340,92 @@ def github_callback():
                 WHERE id = %s RETURNING *
             """, (profile.get("name") or profile["login"], email, username, user["id"])).fetchone()
     return complete_login(user, "github")
+
+def google_request(url, data=None, token=None):
+    headers = {"Accept": "application/json", "User-Agent": "TechStore-Lab08"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    body = urlencode(data).encode() if data else None
+    with urlopen(Request(url, data=body, headers=headers), timeout=15) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+@app.get("/auth/google")
+def google_login():
+    if not app.config["GOOGLE_CLIENT_ID"] or not app.config["GOOGLE_CLIENT_SECRET"]:
+        flash("Google todavía no está configurado. Agrega Client ID y Client Secret en el archivo .env.", "error")
+        return redirect(url_for("login"))
+    state = secrets.token_urlsafe(32)
+    session["google_oauth_state"] = state
+    params = urlencode({
+        "client_id": app.config["GOOGLE_CLIENT_ID"],
+        "redirect_uri": app.config["GOOGLE_REDIRECT_URI"],
+        "response_type": "code",
+        "scope": "openid profile email",
+        "state": state,
+        "access_type": "online",
+        "prompt": "select_account",
+    })
+    return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?{params}")
+
+@app.get("/auth/google/callback")
+def google_callback():
+    expected_state = session.pop("google_oauth_state", "")
+    if not expected_state or not secrets.compare_digest(request.args.get("state", ""), expected_state):
+        flash("La validación de seguridad de Google no coincide. Inicia el acceso nuevamente.", "error")
+        return redirect(url_for("login"))
+    code = request.args.get("code")
+    if not code:
+        flash("Google no devolvió un código de autorización.", "error")
+        return redirect(url_for("login"))
+    try:
+        token_data = google_request(
+            "https://oauth2.googleapis.com/token",
+            {
+                "client_id": app.config["GOOGLE_CLIENT_ID"],
+                "client_secret": app.config["GOOGLE_CLIENT_SECRET"],
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": app.config["GOOGLE_REDIRECT_URI"],
+            },
+        )
+        google_token = token_data.get("access_token")
+        if not google_token:
+            raise ValueError(token_data.get("error_description", "Google no entregó un token"))
+        profile = google_request("https://openidconnect.googleapis.com/v1/userinfo", token=google_token)
+        if not profile.get("email_verified"):
+            raise ValueError("La cuenta de Google no tiene un correo verificado")
+    except (HTTPError, URLError, TimeoutError, ValueError) as error:
+        app.logger.warning("Google OAuth falló: %s", error)
+        flash("No fue posible completar el acceso con Google. Verifica la configuración OAuth.", "error")
+        return redirect(url_for("login"))
+
+    google_id = str(profile["sub"])
+    username = f"google_{google_id}"
+    email = profile.get("email") or f"{google_id}@google.local"
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE google_id = %s", (google_id,)).fetchone()
+        if user is None:
+            user = conn.execute("""
+                INSERT INTO users
+                    (username, password_hash, full_name, email, store_name, role, google_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING *
+            """, (
+                username,
+                generate_password_hash(secrets.token_urlsafe(32)),
+                profile.get("name") or email,
+                email,
+                app.config["GOOGLE_DEFAULT_STORE"],
+                "EMPLEADO",
+                google_id,
+            )).fetchone()
+        else:
+            user = conn.execute("""
+                UPDATE users SET full_name = %s, email = %s,
+                    failed_attempts = 0, locked_until = NULL
+                WHERE id = %s RETURNING *
+            """, (profile.get("name") or email, email, user["id"])).fetchone()
+    return complete_login(user, "google")
 
 @app.post("/logout")
 def logout():
