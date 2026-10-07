@@ -31,7 +31,7 @@ app.config.update(
     GOOGLE_DEFAULT_STORE=os.environ.get("GOOGLE_DEFAULT_STORE", "TechStore Lima Centro"),
 )
 
-LOCKOUT_MINUTES = 15
+LOCKOUT_MINUTES = 1
 MAX_LOGIN_ATTEMPTS = 3
 
 DEMO_PRODUCTS = (
@@ -249,7 +249,7 @@ def login():
                 attempts = attempt_state["failed_attempts"]
                 locked_until = attempt_state["locked_until"]
                 if locked_until:
-                    flash("Cuenta bloqueada durante 15 minutos por tres intentos fallidos.", "error")
+                    flash("Cuenta bloqueada durante 1 minuto por tres intentos fallidos.", "error")
                 else:
                     flash(f"Credenciales incorrectas. Quedan {MAX_LOGIN_ATTEMPTS - attempts} intentos.", "error")
             else:

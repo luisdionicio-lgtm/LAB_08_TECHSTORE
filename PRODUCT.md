@@ -29,7 +29,7 @@ El proyecto se ejecuta con Docker Compose. Nginx recibe las solicitudes, aplica 
 - Inicio de sesión básico por usuario o correo con validación de credenciales.
 - Inicio de sesión con Google y GitHub OAuth 2.0 configurado mediante variables de entorno.
 - Token JWT interno en cookie HttpOnly, válido durante 60 minutos y validado en cada ruta protegida.
-- Bloqueo de cuenta durante 15 minutos después de tres intentos fallidos; contador atómico para tres backends.
+- Bloqueo de cuenta durante 1 minuto después de tres intentos fallidos; contador atómico para tres backends.
 - Tienda y rol asignados a cada usuario.
 - CRUD de productos tecnológicos con inventario compartido.
 - Conservación de Nginx, tres backends y PostgreSQL.

@@ -27,7 +27,7 @@ Nginx distribuye las solicitudes mediante Round Robin. Las tres instancias ejecu
 - Inicio de sesión local.
 - Inicio de sesión con Google y GitHub mediante OAuth 2.0 / OpenID Connect.
 - Token JWT interno válido por 60 minutos para ambos métodos de acceso.
-- Bloqueo temporal de 15 minutos después de tres intentos fallidos.
+- Bloqueo temporal de 1 minuto después de tres intentos fallidos.
 - Tienda y rol asignados a cada usuario.
 - Panel de inventario con productos, unidades, alertas y valor acumulado.
 - Registro, edición y eliminación de productos tecnológicos.

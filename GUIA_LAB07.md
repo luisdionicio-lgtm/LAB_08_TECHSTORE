@@ -67,7 +67,7 @@ Al validar las credenciales, Flask genera un JWT con duración de 60 minutos y l
 1. Cerrar sesión.
 2. Escribir `admin` y una contraseña incorrecta.
 3. Repetir la operación tres veces.
-4. En el tercer intento debe aparecer: `Cuenta bloqueada durante 15 minutos por tres intentos fallidos.`
+4. En el tercer intento debe aparecer: `Cuenta bloqueada durante 1 minuto por tres intentos fallidos.`
 
 ### Captura 4 — Protección ante intentos fallidos
 
@@ -75,7 +75,7 @@ Al validar las credenciales, Flask genera un JWT con duración de 60 minutos y l
 - Mostrar el aviso completo y el formulario.
 - Pie sugerido: **Figura 4. Bloqueo temporal activado en el tercer intento fallido.**
 
-Para continuar la demostración sin esperar 15 minutos, ejecutar:
+Para continuar la demostración sin esperar 1 minuto, ejecutar:
 
 ```powershell
 docker compose exec -T db psql -U lab07 -d lab07 -c "UPDATE users SET failed_attempts=0, locked_until=NULL WHERE username='admin';"
@@ -170,7 +170,7 @@ Actualizar el navegador varias veces y observar el texto `Solicitud atendida por
 
 - Login básico válido.
 - JWT de 60 minutos en cookie `HttpOnly`.
-- Bloqueo en el tercer intento y duración de 15 minutos.
+- Bloqueo en el tercer intento y duración de 1 minuto.
 - Inicio de sesión mediante GitHub OAuth.
 - Inicio de sesión mediante Google OAuth y OpenID Connect.
 - Tienda `TechStore Lima Centro` asignada.
