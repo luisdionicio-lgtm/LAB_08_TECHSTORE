@@ -363,6 +363,11 @@ body { background: #f4f1e8; color: #17232c; overflow-x: hidden; caret-color: #16
 .google-button { color: #27313a; background: white; border: 1px solid #cfd8df; }
 .google-button:hover { background: #f6f8fa; border-color: #9cabb6; }
 .google-button.disabled { color: #74818a; background: #e5eaed; border-color: transparent; pointer-events: none; }
+.google-demo { cursor: default; border-style: dashed; background: #f8fafb; }
+.google-demo:hover { background: #f8fafb; border-color: #cfd8df; }
+.social-copy { display: grid; gap: .08rem; text-align: left; line-height: 1.15; }
+.social-copy strong { color: #27313a; font-size: .78rem; }
+.social-copy small { color: #7b8992; font-size: .6rem; font-weight: 650; }
 .auth-features { display: grid; gap: .65rem; margin: 1rem 0 0; padding: 1rem 0 0; border-top: 1px solid #e0e6e9; list-style: none; }
 .auth-features li { display: flex; justify-content: space-between; gap: 1rem; font-size: .7rem; }
 .auth-features strong { color: #344957; }
