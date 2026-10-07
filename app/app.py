@@ -64,6 +64,51 @@ DEMO_PRODUCTS = (
     ("TS-MOV-005", "Samsung Galaxy A55 5G", "Móviles", "Samsung", 13, 4, "1499.00", "Smartphone 5G con pantalla Super AMOLED y cámara estabilizada."),
 )
 
+PRODUCT_MEDIA = {
+    "TS-GAM-407": {
+        "image": "https://images.unsplash.com/photo-1783783197323-31f5291db6f7?auto=format&fit=crop&w=900&q=82",
+        "alt": "Estación de computadora gamer con iluminación RGB",
+        "author": "Aider Barrios",
+        "source": "https://unsplash.com/photos/kb64bPss0do",
+    },
+    "TS-NBK-001": {
+        "image": "https://images.unsplash.com/photo-1535341000823-01aa350a4fbb?auto=format&fit=crop&w=900&q=82",
+        "alt": "Laptop abierta sobre un escritorio de trabajo",
+        "author": "Kevin Bhagat",
+        "source": "https://unsplash.com/photos/edMu3cQKrho",
+    },
+    "TS-MON-014": {
+        "image": "https://images.unsplash.com/photo-1775410633801-5d7997f795c6?auto=format&fit=crop&w=900&q=82",
+        "alt": "Estación gamer con varios monitores e iluminación RGB",
+        "author": "Branden Skeli",
+        "source": "https://unsplash.com/photos/cxSBgaJOEuU",
+    },
+    "TS-RED-008": {
+        "image": "https://images.unsplash.com/photo-1758611971270-89ce7ed506e1?auto=format&fit=crop&w=900&q=82",
+        "alt": "Persona utilizando tecnología en un escritorio moderno",
+        "author": "Vitaly Gariev",
+        "source": "https://unsplash.com/photos/l_pGKO3rVx4",
+    },
+    "TS-ACC-021": {
+        "image": "https://images.unsplash.com/photo-1775410633801-5d7997f795c6?auto=format&fit=crop&w=900&q=82",
+        "alt": "Teclado y accesorios en una estación gamer",
+        "author": "Branden Skeli",
+        "source": "https://unsplash.com/photos/cxSBgaJOEuU",
+    },
+    "TS-ALM-033": {
+        "image": "https://images.unsplash.com/photo-1783783197323-31f5291db6f7?auto=format&fit=crop&w=900&q=82",
+        "alt": "Componentes de una computadora gamer moderna",
+        "author": "Aider Barrios",
+        "source": "https://unsplash.com/photos/kb64bPss0do",
+    },
+    "TS-MOV-005": {
+        "image": "https://images.unsplash.com/photo-1535341000823-01aa350a4fbb?auto=format&fit=crop&w=900&q=82",
+        "alt": "Teléfono móvil junto a una laptop en un escritorio",
+        "author": "Kevin Bhagat",
+        "source": "https://unsplash.com/photos/edMu3cQKrho",
+    },
+}
+
 def get_db():
     if "db" not in g:
         g.db = psycopg.connect(app.config["DATABASE_URL"], row_factory=dict_row)
@@ -571,6 +616,8 @@ def catalog():
         WHERE active = TRUE AND stock > 0 AND store_name = %s
         ORDER BY category, name
     """, (g.store_name,)).fetchall()
+    for product in products:
+        product["media"] = PRODUCT_MEDIA.get(product["sku"], PRODUCT_MEDIA["TS-GAM-407"])
     cart = session.get("cart", {})
     selected = []
     total = Decimal("0")

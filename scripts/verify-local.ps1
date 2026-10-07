@@ -84,7 +84,7 @@ $catalog = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/login" -Method Post
     username = "cliente"
     password = "Cliente123!"
 }
-if ($catalog.Content -notmatch "Elige tu proxima mejora|Elige tu próxima mejora") {
+if ($catalog.Content -notmatch "Productos disponibles") {
     throw "La cuenta Cliente no fue redirigida al catalogo."
 }
 $catalogProduct = [regex]::Match($catalog.Content, '/catalog/select/(\d+)')

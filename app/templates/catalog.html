@@ -10,7 +10,7 @@
   </div>
   <figure class="catalog-feature">
     <img src="https://images.unsplash.com/photo-1636489953081-c4ebbd50fa3a?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" alt="Computadora gamer con iluminación RGB">
-    <figcaption><strong>Nebula RTX 4070</strong><span>Equipo destacado para gaming y creación</span></figcaption>
+    <figcaption><strong>Nebula RTX 4070</strong><span>Equipo destacado para gaming y creación</span><a href="https://unsplash.com/photos/JomkRNkzKhE" target="_blank" rel="noopener noreferrer">Imagen referencial · Unsplash</a></figcaption>
   </figure>
 </section>
 
@@ -23,7 +23,10 @@
   <section class="product-showcase" aria-label="Catálogo de productos">
     {% for product in products %}
     <article class="shop-product" data-catalog-item data-search="{{ product.name|lower }} {{ product.brand|lower }} {{ product.category|lower }} {{ product.sku|lower }}">
-      <div class="product-visual category-{{ loop.index0 % 4 }}"><span>{{ product.category }}</span><strong>{{ product.brand[0] }}</strong></div>
+      <figure class="product-visual">
+        <img src="{{ product.media.image }}" alt="{{ product.media.alt }}" loading="lazy" referrerpolicy="no-referrer">
+        <figcaption><span>{{ product.category }}</span><a href="{{ product.media.source }}" target="_blank" rel="noopener noreferrer" aria-label="Ver fotografía de {{ product.media.author }} en Unsplash">Foto: {{ product.media.author }} · Unsplash</a></figcaption>
+      </figure>
       <div class="product-content">
         <span class="product-brand">{{ product.brand }} · {{ product.sku }}</span>
         <h3>{{ product.name }}</h3>
