@@ -1,45 +1,33 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Editar' if task else 'Crear' }} tarea | GLAB 07{% endblock %}
+{% block title %}{{ 'Editar' if product and product.id else 'Registrar' }} producto | TechStore{% endblock %}
 {% block content %}
-<section class="form-layout">
+<section class="form-layout product-form-layout">
   <aside class="form-aside">
-    <a class="back-link" href="{{ url_for('tasks') }}">← Volver al tablero</a>
-    <p class="eyebrow light">{{ 'Actualizar registro' if task else 'Nuevo registro' }}</p>
-    <h1>{{ 'Dale un nuevo impulso' if task else 'Convierte una idea en acción' }}</h1>
-    <p>{{ 'Actualiza la información y el estado de esta tarea.' if task else 'Registra una tarea clara para mantener el avance visible para todo el equipo.' }}</p>
-    <ol class="form-steps">
-      <li class="active"><span>1</span><div><strong>Información</strong><small>Título y descripción</small></div></li>
-      <li class="{{ 'active' if task else '' }}"><span>2</span><div><strong>Estado</strong><small>Seguimiento del avance</small></div></li>
-      <li><span>3</span><div><strong>Guardar</strong><small>Persistir en PostgreSQL</small></div></li>
-    </ol>
+    <a class="back-link" href="{{ url_for('inventory') }}">← Volver al inventario</a>
+    <h1>{{ 'Actualizar producto' if product and product.id else 'Registrar producto' }}</h1>
+    <p>Los cambios se guardan en PostgreSQL y quedan disponibles para las tres instancias inmediatamente.</p>
+    <dl class="form-guide"><div><dt>Identificación</dt><dd>SKU único, nombre, marca y categoría.</dd></div><div><dt>Control</dt><dd>Stock actual, umbral mínimo y precio.</dd></div><div><dt>Persistencia</dt><dd>Datos compartidos por todos los backends.</dd></div></dl>
   </aside>
   <section class="form-card">
-    <div class="form-card-heading">
-      <span class="form-icon" aria-hidden="true">{{ '✎' if task else '+' }}</span>
-      <div><p class="eyebrow">Formulario de tarea</p><h2>{{ 'Editar tarea' if task else 'Crear tarea' }}</h2></div>
-    </div>
-  <form method="post" class="stack">
-    <label for="title">Título <span class="required">Obligatorio</span></label>
-    <div class="input-wrap plain">
-      <input id="title" name="title" maxlength="160" placeholder="Ej. Validar el balanceo Round Robin" required value="{{ task.title if task else '' }}">
-      <small class="char-count"><span data-char-count>0</span>/160</small>
-    </div>
-    <label for="description">Descripción <span class="optional">Opcional</span></label>
-    <div class="input-wrap plain">
-      <textarea id="description" name="description" rows="6" placeholder="Añade contexto, criterios o próximos pasos...">{{ task.description if task else '' }}</textarea>
-    </div>
-    {% if task %}
-      <label class="status-switch">
-        <input type="checkbox" name="completed" {% if task.completed %}checked{% endif %}>
-        <span class="switch" aria-hidden="true"><i></i></span>
-        <span><strong>Marcar como completada</strong><small>La tarea aparecerá dentro del progreso finalizado.</small></span>
-      </label>
-    {% endif %}
-    <div class="form-actions">
-      <a class="secondary-button" href="{{ url_for('tasks') }}">Cancelar</a>
-      <button class="primary-button" type="submit">Guardar tarea <span aria-hidden="true">→</span></button>
-    </div>
-  </form>
+    <div class="form-card-heading"><span class="form-icon" aria-hidden="true">TS</span><div><h2>Información del producto</h2><p class="muted">Completa los campos obligatorios.</p></div></div>
+    <form method="post" class="stack product-form">
+      <div class="field-grid two">
+        <div><label for="sku">SKU <span class="required">Obligatorio</span></label><input id="sku" name="sku" maxlength="40" placeholder="TS-NBK-001" required value="{{ product.sku if product else '' }}"></div>
+        <div><label for="name">Nombre <span class="required">Obligatorio</span></label><input id="name" name="name" maxlength="160" placeholder="Laptop Lenovo IdeaPad Slim 3" required value="{{ product.name if product else '' }}"></div>
+      </div>
+      <div class="field-grid two">
+        <div><label for="brand">Marca <span class="required">Obligatorio</span></label><input id="brand" name="brand" maxlength="80" placeholder="Lenovo" required value="{{ product.brand if product else '' }}"></div>
+        <div><label for="category">Categoría <span class="required">Obligatorio</span></label><input id="category" name="category" list="categories" maxlength="80" placeholder="Computadoras" required value="{{ product.category if product else '' }}"><datalist id="categories"><option value="Computadoras"><option value="Móviles"><option value="Monitores"><option value="Accesorios"><option value="Redes"><option value="Almacenamiento"></datalist></div>
+      </div>
+      <div class="field-grid three">
+        <div><label for="stock">Stock actual</label><input id="stock" type="number" name="stock" min="0" required value="{{ product.stock if product else 0 }}"></div>
+        <div><label for="min_stock">Stock mínimo</label><input id="min_stock" type="number" name="min_stock" min="0" required value="{{ product.min_stock if product else 5 }}"></div>
+        <div><label for="price">Precio en soles</label><input id="price" type="number" name="price" min="0" step="0.01" required value="{{ product.price if product else '0.00' }}"></div>
+      </div>
+      <div><label for="description">Descripción técnica</label><textarea id="description" name="description" rows="4" placeholder="Características relevantes para identificar el producto...">{{ product.description if product else '' }}</textarea></div>
+      <label class="status-switch"><input type="checkbox" name="active" {% if not product or product.active %}checked{% endif %}><span class="switch" aria-hidden="true"><i></i></span><span><strong>Producto activo</strong><small>Disponible para consulta y operaciones de inventario.</small></span></label>
+      <div class="form-actions"><a class="secondary-button" href="{{ url_for('inventory') }}">Cancelar</a><button class="primary-button" type="submit">Guardar producto</button></div>
+    </form>
   </section>
 </section>
 {% endblock %}

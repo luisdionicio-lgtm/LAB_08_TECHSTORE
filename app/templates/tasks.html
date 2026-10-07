@@ -1,95 +1,67 @@
 {% extends "base.html" %}
-{% block title %}Tareas | GLAB 07{% endblock %}
+{% block title %}Inventario | TechStore{% endblock %}
 {% block content %}
-<section class="dashboard-hero">
-  <div class="hero-heading">
-    <div>
-      <p class="eyebrow">Panel de trabajo</p>
-      <h1>Hola, {{ g.user }} <span aria-hidden="true">✦</span></h1>
-      <p class="muted">Organiza el laboratorio y observa el monolito balanceado en acción.</p>
-    </div>
-    <a class="primary-button add-button" href="{{ url_for('create_task') }}"><span aria-hidden="true">＋</span>Nueva tarea</a>
+<section class="dashboard-hero inventory-hero">
+  <div class="gaming-banner">
+    <img src="https://images.unsplash.com/photo-1636489953081-c4ebbd50fa3a?auto=format&amp;fit=crop&amp;w=1600&amp;q=82" alt="PC gamer con componentes RGB en un escritorio tecnológico">
+    <div><strong>PC Gamer destacado</strong><span>Nebula RTX 4070 · Ryzen 7 · 32 GB DDR5 · 1 TB NVMe</span></div>
+    <a href="https://unsplash.com/photos/a-computer-desk-with-a-monitor-keyboard-and-mouse-JomkRNkzKhE" target="_blank" rel="noreferrer">Imagen referencial</a>
   </div>
-
-  <div class="stat-grid">
-    <article class="stat-card total">
-      <span class="stat-icon" aria-hidden="true">◇</span>
-      <div><strong>{{ stats.total }}</strong><span>Tareas totales</span></div>
-      <small>Registros en PostgreSQL</small>
-    </article>
-    <article class="stat-card pending">
-      <span class="stat-icon" aria-hidden="true">◷</span>
-      <div><strong>{{ stats.pending }}</strong><span>Pendientes</span></div>
-      <small>Próximas por completar</small>
-    </article>
-    <article class="stat-card complete">
-      <span class="stat-icon" aria-hidden="true">✓</span>
-      <div><strong>{{ stats.completed }}</strong><span>Completadas</span></div>
-      <small>Avance confirmado</small>
-    </article>
-    <article class="stat-card progress-card">
-      <div class="progress-ring" style="--progress: {{ stats.progress }}">
-        <span>{{ stats.progress }}%</span>
-      </div>
-      <div><strong>Progreso</strong><span>del tablero</span></div>
-      <small>Actualización automática</small>
-    </article>
+  <div class="hero-heading">
+    <div><h1>Inventario tecnológico</h1><p class="muted">{{ g.store_name }} · Sesión {{ 'GitHub OAuth' if g.auth_provider == 'github' else 'básica' }} protegida con JWT.</p></div>
+    <a class="primary-button add-button" href="{{ url_for('create_product') }}">Registrar producto</a>
+  </div>
+  <div class="architecture-strip" aria-label="Flujo de la arquitectura local">
+    <span>Navegador</span><b></b><span class="active">Nginx</span><b></b><span>Backend 1</span><span>Backend 2</span><span>Backend 3</span><b></b><span>PostgreSQL</span>
+  </div>
+  <div class="stat-grid inventory-stats">
+    <article class="stat-card total"><div><strong>{{ stats.products }}</strong><span>Productos activos</span></div><small>Catálogo tecnológico</small></article>
+    <article class="stat-card pending"><div><strong>{{ stats.units }}</strong><span>Unidades disponibles</span></div><small>Existencia acumulada</small></article>
+    <article class="stat-card alert-stat"><div><strong>{{ stats.alerts }}</strong><span>Alertas de stock</span></div><small>Requieren reposición</small></article>
+    <article class="stat-card value-stat"><div><strong>S/ {{ '{:,.2f}'.format(stats.value) }}</strong><span>Valor del inventario</span></div><small>Precio × unidades</small></article>
   </div>
 </section>
 
 <section class="workspace-panel">
   <div class="workspace-heading">
-    <div>
-      <p class="eyebrow">CRUD compartido</p>
-      <h2>Mis tareas</h2>
-    </div>
+    <div><h2>Productos</h2><p class="muted">Datos de demostración para la gestión operativa de TechStore.</p></div>
     <div class="task-tools">
-      <label class="search-box">
-        <span aria-hidden="true"></span>
-        <input type="search" placeholder="Buscar una tarea" aria-label="Buscar una tarea" data-task-search>
-      </label>
-      <div class="filter-group" aria-label="Filtrar tareas">
-        <button type="button" class="filter-button active" data-filter="all">Todas</button>
-        <button type="button" class="filter-button" data-filter="pending">Pendientes</button>
-        <button type="button" class="filter-button" data-filter="done">Completadas</button>
+      <label class="search-box"><span aria-hidden="true"></span><input type="search" placeholder="Buscar por producto, marca o SKU" aria-label="Buscar productos" data-product-search></label>
+      <div class="filter-group" aria-label="Filtrar por nivel de stock">
+        <button type="button" class="filter-button active" data-filter="all">Todos</button>
+        <button type="button" class="filter-button" data-filter="healthy">Disponible</button>
+        <button type="button" class="filter-button" data-filter="low">Stock bajo</button>
+        <button type="button" class="filter-button" data-filter="out">Agotado</button>
       </div>
     </div>
   </div>
 
-{% if tasks %}
-  <div class="task-grid" data-task-grid>
-    {% for task in tasks %}
-      <article class="task-card" data-status="{{ 'done' if task.completed else 'pending' }}" data-search="{{ task.title|lower }} {{ task.description|lower }}">
-        <div class="task-card-top">
-          <div class="task-status {{ 'done' if task.completed else 'pending' }}">
-            <i></i>{{ 'Completada' if task.completed else 'Pendiente' }}
-          </div>
-          <span class="task-id">#{{ '%03d'|format(task.id) }}</span>
-        </div>
-        <h2>{{ task.title }}</h2>
-        <p>{{ task.description or 'Sin descripción.' }}</p>
-        <div class="task-meta"><span>Actualizada</span><time>{{ task.updated_at.strftime('%d/%m/%Y · %H:%M') }}</time></div>
-        <div class="actions">
-          <a class="edit-link" href="{{ url_for('edit_task', task_id=task.id) }}"><span aria-hidden="true">✎</span>Editar</a>
-          <form method="post" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('Eliminar esta tarea?')">
-            <button class="danger-link" type="submit"><span aria-hidden="true">×</span>Eliminar</button>
-          </form>
-        </div>
-      </article>
-    {% endfor %}
+  {% if products %}
+  <div class="inventory-table-wrap">
+    <table class="inventory-table">
+      <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Existencia</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+      <tbody>
+      {% for product in products %}
+        <tr data-product-row data-status="{{ product.state }}" data-search="{{ product.name|lower }} {{ product.brand|lower }} {{ product.sku|lower }} {{ product.category|lower }}">
+          <td data-label="Producto"><strong>{{ product.name }}</strong><small>{{ product.brand }} · {{ product.sku }}</small></td>
+          <td data-label="Categoría">{{ product.category }}</td>
+          <td data-label="Precio" class="numeric">S/ {{ '{:,.2f}'.format(product.price) }}</td>
+          <td data-label="Existencia" class="stock-cell"><strong>{{ product.stock }}</strong><small>Mínimo {{ product.min_stock }}</small><span class="stock-line {{ product.state }}" style="--stock-level: {{ [product.stock * 4, 100]|min }}%"></span></td>
+          <td data-label="Estado"><span class="stock-badge {{ product.state }}">{{ {'healthy':'Disponible','low':'Stock bajo','out':'Agotado','inactive':'Inactivo'}[product.state] }}</span></td>
+          <td data-label="Acciones"><div class="row-actions"><a href="{{ url_for('edit_product', product_id=product.id) }}">Editar</a><form method="post" action="{{ url_for('delete_product', product_id=product.id) }}" onsubmit="return confirm('¿Eliminar {{ product.name }} del inventario?')"><button type="submit">Eliminar</button></form></div></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
   </div>
-  <div class="no-results" data-no-results hidden>
-    <span aria-hidden="true">⌕</span>
-    <h3>No encontramos coincidencias</h3>
-    <p>Prueba con otro texto o cambia el filtro.</p>
-  </div>
-{% else %}
-  <div class="empty-state">
-    <div class="empty-illustration" aria-hidden="true"><span>✓</span></div>
-    <h2>Tu tablero está listo</h2>
-    <p>Crea el primer registro para demostrar las operaciones del CRUD.</p>
-    <a class="primary-button" href="{{ url_for('create_task') }}">Crear primera tarea</a>
-  </div>
-{% endif %}
+  <div class="no-results" data-no-results hidden><h3>No hay productos con ese criterio</h3><p>Cambia el texto de búsqueda o selecciona otro estado.</p></div>
+  {% else %}
+  <div class="empty-state"><h2>El inventario está vacío</h2><p>Registra el primer producto tecnológico para comenzar la demostración.</p><a class="primary-button" href="{{ url_for('create_product') }}">Registrar producto</a></div>
+  {% endif %}
+</section>
+
+<section class="tech-brief">
+  <div><h2>Arquitectura local conservada</h2><p>Un solo código Flask se ejecuta en tres procesos. Nginx reparte las solicitudes y PostgreSQL mantiene una fuente de datos común, por lo que cualquier backend muestra el mismo inventario.</p></div>
+  <dl><div><dt>Entrada</dt><dd>localhost:8080</dd></div><div><dt>Balanceo</dt><dd>Round Robin</dd></div><div><dt>Persistencia</dt><dd>PostgreSQL 16</dd></div><div><dt>Contenedores</dt><dd>Docker Compose</dd></div></dl>
 </section>
 {% endblock %}

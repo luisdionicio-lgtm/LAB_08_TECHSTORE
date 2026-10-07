@@ -1,68 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Iniciar sesion | GLAB 07{% endblock %}
+{% block title %}Acceso | TechStore{% endblock %}
 {% block body_class %}login-page{% endblock %}
 {% block content %}
 <section class="login-shell">
-  <div class="welcome-panel">
-    <div class="orb orb-one"></div>
-    <div class="orb orb-two"></div>
+  <div class="welcome-panel spectrum-panel">
     <div class="welcome-content">
-      <span class="hero-tag"><i></i> Infraestructura disponible</span>
-      <p class="eyebrow light">Experiencia local confiable</p>
-      <h1>Tu trabajo fluye.<br><span>Nosotros distribuimos.</span></h1>
-      <p class="hero-copy">Un entorno claro y seguro para gestionar tareas mientras Nginx reparte cada solicitud entre tres instancias activas.</p>
-
-      <div class="network-map" aria-label="Diagrama del balanceo local">
-        <div class="network-client"><span>Cliente</span><small>Navegador</small></div>
+      <span class="hero-tag"><i></i> Infraestructura local disponible</span>
+      <h1>Inventario tecnológico, servido por tres instancias.</h1>
+      <p class="hero-copy">TechStore centraliza productos, existencias y alertas en PostgreSQL mientras Nginx distribuye cada solicitud mediante Round Robin.</p>
+      <figure class="gaming-reference">
+        <img src="https://images.unsplash.com/photo-1636489953081-c4ebbd50fa3a?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" alt="Estación gamer con torre iluminada, monitor y periféricos RGB">
+        <figcaption>Referencia visual de estación PC gamer · <a href="https://unsplash.com/photos/a-computer-desk-with-a-monitor-keyboard-and-mouse-JomkRNkzKhE" target="_blank" rel="noreferrer">Foto en Unsplash</a></figcaption>
+      </figure>
+      <div class="network-map" aria-label="Arquitectura local de TechStore">
+        <div class="network-client"><span>Navegador</span><small>Puerto 8080</small></div>
         <div class="flow-line"><i></i></div>
         <div class="network-core"><span>Nginx</span><small>Round Robin</small></div>
         <div class="server-lines" aria-hidden="true"><i></i><i></i><i></i></div>
-        <div class="server-stack">
-          <span><i></i>Backend 1</span>
-          <span><i></i>Backend 2</span>
-          <span><i></i>Backend 3</span>
-        </div>
+        <div class="server-stack"><span><i></i>Backend 1 · 8081</span><span><i></i>Backend 2 · 8082</span><span><i></i>Backend 3 · 8083</span></div>
       </div>
-
-      <div class="trust-row">
-        <span><i>✓</i> PostgreSQL</span>
-        <span><i>✓</i> Sesión compartida</span>
-        <span><i>✓</i> Estado saludable</span>
-      </div>
+      <div class="spectrum-rail" aria-hidden="true"><i style="--wave:8%;--line:#8b6fff"></i><i style="--wave:23%;--line:#4298ff"></i><i style="--wave:39%;--line:#22c7d7"></i><i class="double" style="--wave:58%;--line:#e6c84f"></i><i style="--wave:76%;--line:#ff8a3d"></i><i style="--wave:91%;--line:#ff536c"></i></div>
+      <div class="trust-row"><span><i>✓</i> Docker Compose</span><span><i>✓</i> Datos compartidos</span><span><i>✓</i> Sin AWS</span></div>
     </div>
   </div>
-
   <div class="auth-panel">
     <section class="auth-card">
-      <div class="auth-heading">
-        <span class="auth-symbol" aria-hidden="true">N</span>
-        <div>
-          <p class="eyebrow">Acceso seguro</p>
-          <h2>Bienvenido de nuevo</h2>
-        </div>
-      </div>
-      <p class="muted">Ingresa a tu espacio de trabajo para administrar las tareas del laboratorio.</p>
+      <div class="auth-heading"><span class="auth-symbol" aria-hidden="true">TS</span><div><h2>Acceso al inventario</h2><p class="muted">Panel administrativo local</p></div></div>
+      <p class="muted">Consulta productos, controla el stock y comprueba qué backend procesa cada operación.</p>
       <form method="post" class="stack">
-        <label for="username">Usuario</label>
-        <div class="input-wrap">
-          <span class="input-icon" aria-hidden="true">@</span>
-          <input id="username" name="username" autocomplete="username" placeholder="Ingresa tu usuario" required autofocus>
-        </div>
+        <label for="username">Usuario o correo</label>
+        <div class="input-wrap"><span class="input-icon" aria-hidden="true">@</span><input id="username" name="username" autocomplete="username" placeholder="admin o admin@techstore.local" required></div>
         <label for="password">Contraseña</label>
-        <div class="input-wrap">
-          <span class="input-icon lock-icon" aria-hidden="true"></span>
-          <input id="password" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required>
-          <button class="password-toggle" type="button" aria-label="Mostrar contraseña" data-password-toggle>Ver</button>
-        </div>
-        <button class="primary-button login-button" type="submit">
-          <span>Ingresar al panel</span><span aria-hidden="true">→</span>
-        </button>
+        <div class="input-wrap"><span class="input-icon lock-icon" aria-hidden="true"></span><input id="password" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required><button class="password-toggle" type="button" aria-label="Mostrar contraseña" data-password-toggle>Ver</button></div>
+        <button class="primary-button login-button" type="submit"><span>Ingresar a TechStore</span><span class="button-status" aria-hidden="true"></span></button>
       </form>
-      <div class="credentials">
-        <span>Cuenta de demostración</span>
-        <code>admin</code><b>/</b><code>admin123</code>
-      </div>
-      <p class="privacy-note"><i aria-hidden="true"></i>Conexión local · Tus datos permanecen en este entorno</p>
+      <div class="auth-divider"><span>o continúa con</span></div>
+      {% if github_enabled %}<a class="github-button" href="{{ url_for('github_login') }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.72 1.26 3.38.96.1-.75.4-1.27.74-1.56-2.57-.3-5.27-1.29-5.27-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.47.11-3.06 0 0 .98-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.75.8 1.2 1.84 1.2 3.1 0 4.43-2.71 5.4-5.29 5.69.42.36.79 1.07.79 2.17v3.22c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg>
+        <span>Ingresar con GitHub</span>
+      </a>{% else %}<div class="github-button disabled" role="status"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.72 1.26 3.38.96.1-.75.4-1.27.74-1.56-2.57-.3-5.27-1.29-5.27-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.47.11-3.06 0 0 .98-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.75.8 1.2 1.84 1.2 3.1 0 4.43-2.71 5.4-5.29 5.69.42.36.79 1.07.79 2.17v3.22c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg><span>GitHub pendiente de configuración</span></div>{% endif %}
+      <div class="credentials"><span>Cuenta de demostración</span><code>admin</code><b>/</b><code>admin123</code></div>
+      <ul class="auth-features">
+        <li><strong>JWT interno</strong><span>Válido durante 60 minutos</span></li>
+        <li><strong>Protección de acceso</strong><span>Bloqueo por 15 minutos después de 3 intentos</span></li>
+        <li><strong>Tienda asignada</strong><span>TechStore Lima Centro</span></li>
+      </ul>
+      <p class="privacy-note"><i aria-hidden="true"></i>Entorno académico local · Datos almacenados en PostgreSQL</p>
     </section>
   </div>
 </section>

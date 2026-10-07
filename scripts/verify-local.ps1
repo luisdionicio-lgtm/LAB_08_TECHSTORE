@@ -25,37 +25,54 @@ Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/login" -Method Post -WebSessio
     password = "admin123"
 } | Out-Null
 
-$title = "Prueba automatizada $(Get-Date -Format 'yyyyMMdd-HHmmss')"
-Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/tasks/new" -Method Post -WebSession $session -Body @{
-    title = $title
+$stamp = Get-Date -Format 'yyyyMMddHHmmss'
+$sku = "QA-$stamp"
+$name = "Producto automatizado $stamp"
+Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/products/new" -Method Post -WebSession $session -Body @{
+    sku = $sku
+    name = $name
+    brand = "TechStore QA"
+    category = "Pruebas"
+    stock = "6"
+    min_stock = "3"
+    price = "99.90"
     description = "Registro creado a traves del balanceador Nginx"
+    active = "on"
 } | Out-Null
 
 $page = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/" -WebSession $session
-if ($page.Content -notmatch [regex]::Escape($title)) {
+if ($page.Content -notmatch [regex]::Escape($sku)) {
     throw "El registro creado no aparece en el listado del CRUD."
 }
 
-$editMatch = [regex]::Match($page.Content, '/tasks/(\d+)/edit')
+$rowPattern = '<tr[^>]*data-search="[^"]*' + [regex]::Escape($sku.ToLowerInvariant()) + '[^"]*"[^>]*>.*?</tr>'
+$productBlock = [regex]::Match($page.Content, $rowPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+$editMatch = [regex]::Match($productBlock.Value, '/products/(\d+)/edit')
 if (-not $editMatch.Success) {
     throw "No se encontro el enlace de edicion del registro creado."
 }
-$taskId = $editMatch.Groups[1].Value
-$updatedTitle = "$title actualizado"
-Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/tasks/$taskId/edit" -Method Post -WebSession $session -Body @{
-    title = $updatedTitle
+$productId = $editMatch.Groups[1].Value
+$updatedName = "$name actualizado"
+Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/products/$productId/edit" -Method Post -WebSession $session -Body @{
+    sku = $sku
+    name = $updatedName
+    brand = "TechStore QA"
+    category = "Pruebas"
+    stock = "2"
+    min_stock = "3"
+    price = "109.90"
     description = "Registro actualizado a traves del balanceador Nginx"
-    completed = "on"
+    active = "on"
 } | Out-Null
 
 $updatedPage = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/" -WebSession $session
-if ($updatedPage.Content -notmatch [regex]::Escape($updatedTitle) -or $updatedPage.Content -notmatch "Completada") {
+if ($updatedPage.Content -notmatch [regex]::Escape($updatedName) -or $updatedPage.Content -notmatch "Stock bajo") {
     throw "La actualizacion del registro no se reflejo en el listado."
 }
 
-Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/tasks/$taskId/delete" -Method Post -WebSession $session | Out-Null
+Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/products/$productId/delete" -Method Post -WebSession $session | Out-Null
 $finalPage = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/" -WebSession $session
-if ($finalPage.Content -match [regex]::Escape($updatedTitle)) {
+if ($finalPage.Content -match [regex]::Escape($updatedName)) {
     throw "El registro de prueba no fue eliminado."
 }
 

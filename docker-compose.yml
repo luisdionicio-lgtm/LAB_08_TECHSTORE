@@ -19,7 +19,12 @@ services:
       dockerfile: app/Dockerfile
     environment:
       SECRET_KEY: ${SECRET_KEY:-lab07-cambie-esta-clave}
+      JWT_SECRET: ${JWT_SECRET:-techstore-jwt-cambie-esta-clave-de-32-caracteres}
       DATABASE_URL: postgresql://lab07:${POSTGRES_PASSWORD:-lab07-db-password}@db:5432/lab07
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-http://localhost:8080/auth/github/callback}
+      GITHUB_DEFAULT_STORE: ${GITHUB_DEFAULT_STORE:-TechStore Lima Centro}
     depends_on:
       db:
         condition: service_healthy

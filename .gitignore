@@ -4,4 +4,6 @@ __pycache__/
 .pytest_cache/
 .docx_media/
 .docx_render/
-
+.impeccable/
+tmp/
+output/
