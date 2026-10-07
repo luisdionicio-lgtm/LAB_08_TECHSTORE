@@ -42,4 +42,17 @@ document.addEventListener("DOMContentLoaded", () => {
     activeFilter = button.dataset.filter;
     applyFilters();
   }));
+
+  const catalogSearch = document.querySelector("[data-catalog-search]");
+  const catalogItems = [...document.querySelectorAll("[data-catalog-item]")];
+  const catalogEmpty = document.querySelector("[data-catalog-empty]");
+  catalogSearch?.addEventListener("input", () => {
+    const term = catalogSearch.value.trim().toLowerCase();
+    let visible = 0;
+    catalogItems.forEach((item) => {
+      item.hidden = !(item.dataset.search || "").includes(term);
+      if (!item.hidden) visible += 1;
+    });
+    if (catalogEmpty) catalogEmpty.hidden = visible !== 0;
+  });
 });

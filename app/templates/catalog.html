@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Catálogo | TechStore{% endblock %}
+{% block body_class %}catalog-page{% endblock %}
+{% block content %}
+<section class="catalog-hero">
+  <div class="catalog-hero-copy">
+    <h1>Elige tu próxima mejora.</h1>
+    <p>Explora tecnología disponible en {{ g.store_name }} y crea una selección sin realizar pagos.</p>
+    <div class="catalog-session"><span>{{ role_names[g.role] }}</span><span>{{ {'github':'GitHub + MFA','google':'Google OAuth'}.get(g.auth_provider, 'Cuenta local') }}</span><span>JWT 60 min</span></div>
+  </div>
+  <figure class="catalog-feature">
+    <img src="https://images.unsplash.com/photo-1636489953081-c4ebbd50fa3a?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" alt="Computadora gamer con iluminación RGB">
+    <figcaption><strong>Nebula RTX 4070</strong><span>Equipo destacado para gaming y creación</span></figcaption>
+  </figure>
+</section>
+
+<section class="catalog-toolbar">
+  <div><h2>Productos disponibles</h2><p>{{ products|length }} opciones listas para seleccionar</p></div>
+  <label class="search-box catalog-search"><span aria-hidden="true"></span><input type="search" placeholder="Buscar producto, marca o categoría" aria-label="Buscar productos" data-catalog-search></label>
+</section>
+
+<div class="catalog-layout">
+  <section class="product-showcase" aria-label="Catálogo de productos">
+    {% for product in products %}
+    <article class="shop-product" data-catalog-item data-search="{{ product.name|lower }} {{ product.brand|lower }} {{ product.category|lower }} {{ product.sku|lower }}">
+      <div class="product-visual category-{{ loop.index0 % 4 }}"><span>{{ product.category }}</span><strong>{{ product.brand[0] }}</strong></div>
+      <div class="product-content">
+        <span class="product-brand">{{ product.brand }} · {{ product.sku }}</span>
+        <h3>{{ product.name }}</h3>
+        <p>{{ product.description }}</p>
+        <div class="product-purchase"><div><strong>S/ {{ '{:,.2f}'.format(product.price) }}</strong><small>{{ product.stock }} disponibles</small></div><form method="post" action="{{ url_for('select_product', product_id=product.id) }}"><label><span class="sr-only">Cantidad de {{ product.name }}</span><input type="number" name="quantity" min="1" max="{{ product.stock }}" value="1" aria-label="Cantidad de {{ product.name }}"></label><button type="submit">Seleccionar</button></form></div>
+      </div>
+    </article>
+    {% else %}
+    <div class="empty-state"><h2>No hay productos disponibles</h2><p>Vuelve más tarde o consulta otra tienda.</p></div>
+    {% endfor %}
+    <div class="no-results" data-catalog-empty hidden><h3>No encontramos coincidencias</h3><p>Prueba con otra marca, categoría o nombre.</p></div>
+  </section>
+
+  <aside class="selection-panel" id="seleccion">
+    <div class="selection-heading"><div><h2>Tu selección</h2><p>Resumen para demostración</p></div><span>{{ cart_count }}</span></div>
+    {% if selected %}
+      <ul class="selection-list">
+      {% for item in selected %}<li><div><strong>{{ item.name }}</strong><small>{{ item.quantity }} × S/ {{ '{:,.2f}'.format(item.price) }}</small></div><div><b>S/ {{ '{:,.2f}'.format(item.subtotal) }}</b><form method="post" action="{{ url_for('remove_selection', product_id=item.id) }}"><button type="submit" aria-label="Quitar {{ item.name }}">Quitar</button></form></div></li>{% endfor %}
+      </ul>
+      <div class="selection-total"><span>Total referencial</span><strong>S/ {{ '{:,.2f}'.format(total) }}</strong></div>
+      <form method="post" action="{{ url_for('confirm_selection') }}"><button class="primary-button selection-confirm" type="submit">Confirmar selección</button></form>
+      <p class="selection-note">Demostración académica: no procesa pagos ni genera pedidos reales.</p>
+    {% else %}
+      <div class="selection-empty"><span aria-hidden="true"></span><p>Aún no seleccionaste productos.</p><small>Usa el botón Seleccionar del catálogo.</small></div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

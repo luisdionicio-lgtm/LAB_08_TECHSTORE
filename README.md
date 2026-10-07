@@ -56,8 +56,9 @@ Abra `http://localhost:8080` y pruebe los cuatro perfiles:
 | Gerente de Tienda | `gerente` | `Gerente123!` |
 | Empleado de Ventas | `ventas` | `Ventas123!` |
 | Auditor | `auditor` | `Auditor123!` |
+| Cliente | `cliente` | `Cliente123!` |
 
-El Administrador gestiona cuentas y roles; el Gerente administra productos de su tienda; Ventas solo actualiza existencias; y el Auditor trabaja en modo de lectura.
+El Administrador gestiona cuentas y roles; el Gerente administra productos de su tienda; Ventas solo actualiza existencias; el Auditor trabaja en modo de lectura; y el Cliente selecciona productos desde un catálogo. Las nuevas cuentas de GitHub y Google reciben el perfil Cliente.
 
 ## Configurar GitHub OAuth
 

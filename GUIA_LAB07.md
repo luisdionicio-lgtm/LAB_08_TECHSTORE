@@ -56,6 +56,7 @@ Usar las cuentas demostrativas:
 | Gerente de Tienda | `gerente` | `Gerente123!` | Gestiona productos de su tienda |
 | Empleado de Ventas | `ventas` | `Ventas123!` | Consulta productos y actualiza únicamente el stock |
 | Auditor | `auditor` | `Auditor123!` | Consulta global en modo de solo lectura |
+| Cliente | `cliente` | `Cliente123!` | Explora el catálogo y selecciona productos |
 
 Al validar las credenciales, Flask genera un JWT con duración de 60 minutos y lo guarda en una cookie `HttpOnly`. Después redirige al inventario de la tienda asignada `TechStore Lima Centro`.
 
@@ -103,7 +104,7 @@ docker compose exec -T db psql -U lab07 -d lab07 -c "UPDATE users SET failed_att
 
 ### Captura 6 — Retorno desde GitHub
 
-- Después de autorizar GitHub, TechStore solicita configurar o verificar MFA antes de entrar al inventario.
+- Después de autorizar GitHub, TechStore solicita configurar o verificar MFA antes de entrar al catálogo del Cliente.
 - El JWT todavía no se genera en este punto.
 - Pie sugerido: **Figura 6. Identidad principal validada mediante GitHub OAuth.**
 
@@ -132,7 +133,7 @@ En el primer acceso social, la pantalla muestra el flujo **GitHub OAuth → Cód
 ### Captura 6C — MFA correcto y JWT
 
 - Ingresar el código vigente de la aplicación autenticadora.
-- Capturar el inventario con el mensaje de MFA verificado y `Sesión GitHub OAuth protegida con JWT`.
+- Capturar el catálogo del Cliente con el mensaje de MFA verificado y la etiqueta `GitHub + MFA`.
 - Pie sugerido: **Figura 6C. Acceso concedido y JWT emitido después de validar el segundo factor.**
 
 ### Captura 6D — Estado MFA en administración
@@ -148,6 +149,36 @@ docker compose exec -T db psql -U lab07 -d lab07 -c "UPDATE users SET mfa_secret
 ```
 
 Luego cierre sesión y vuelva a ingresar con GitHub.
+
+## 7.2 Vista de Cliente y selección de productos
+
+Después de completar GitHub y MFA, la cuenta social recibe el perfil **Cliente** y TechStore abre `/catalog`.
+
+1. Compruebe que la cabecera muestre **Mi selección** y `TechStore Lima Centro`.
+2. Use el buscador para localizar `PC Gamer Nebula RTX 4070`.
+3. Seleccione una cantidad entre 1 y el stock disponible.
+4. Pulse **Seleccionar**.
+5. Compruebe que el producto aparezca en **Tu selección**, con cantidad, subtotal y total referencial.
+
+### Captura 6E — Catálogo del Cliente
+
+- Mostrar el encabezado tecnológico, productos disponibles y la sesión `GitHub + MFA`.
+- Pie sugerido: **Figura 6E. Vista de Cliente habilitada después de GitHub OAuth y MFA.**
+
+### Captura 6F — Producto seleccionado
+
+- Mostrar el producto dentro del panel **Tu selección** y el total referencial.
+- Pie sugerido: **Figura 6F. Selección de productos tecnológicos realizada por el Cliente.**
+
+6. Pulse **Confirmar selección**.
+7. Debe aparecer `Selección registrada para demostración. No se realizó ningún cobro.`
+
+### Captura 6G — Confirmación académica
+
+- Mostrar el aviso de confirmación y el carrito vacío.
+- Pie sugerido: **Figura 6G. Confirmación de la selección sin procesamiento de pagos reales.**
+
+El Cliente no puede abrir el inventario administrativo, registrar productos, modificar stock, cambiar precios ni gestionar usuarios. Si intenta acceder a una ruta administrativa, TechStore lo devuelve al catálogo con un aviso de permiso denegado.
 
 ## 7A. Autenticación con Google
 
@@ -206,7 +237,7 @@ Inicie sesión como `admin` con `Admin123!` y seleccione **Usuarios y roles**. E
 ### Captura 8A — Administración de usuarios
 
 - Mostrar el formulario de registro y la tabla con las cuatro cuentas.
-- Deben verse Administrador del Sistema, Gerente de Tienda, Empleado de Ventas y Auditor.
+- Deben verse Administrador del Sistema, Gerente de Tienda, Empleado de Ventas, Auditor y Cliente.
 - Pie sugerido: **Figura 8A. Gestión centralizada de cuentas, perfiles y tiendas por el Administrador.**
 
 Pruebe después cada perfil cerrando sesión:

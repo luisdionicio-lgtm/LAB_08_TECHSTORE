@@ -43,6 +43,7 @@ ROLES = {
     "GERENTE": "Gerente de Tienda",
     "VENTAS": "Empleado de Ventas",
     "AUDITOR": "Auditor",
+    "CLIENTE": "Cliente",
 }
 
 DEMO_USERS = (
@@ -50,6 +51,7 @@ DEMO_USERS = (
     ("gerente", "Gerente123!", "Gerente Lima Centro", "gerente@techstore.local", "TechStore Lima Centro", "GERENTE"),
     ("ventas", "Ventas123!", "Empleado de Ventas", "ventas@techstore.local", "TechStore Lima Centro", "VENTAS"),
     ("auditor", "Auditor123!", "Auditor TechStore", "auditor@techstore.local", "Todas las tiendas", "AUDITOR"),
+    ("cliente", "Cliente123!", "Cliente TechStore", "cliente@techstore.local", "TechStore Lima Centro", "CLIENTE"),
 )
 
 DEMO_PRODUCTS = (
@@ -127,6 +129,7 @@ def init_db():
                 conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_github_id_unique ON users (github_id) WHERE github_id IS NOT NULL")
                 conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_unique ON users (google_id) WHERE google_id IS NOT NULL")
                 conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users (lower(email)) WHERE email IS NOT NULL")
+                conn.execute("UPDATE users SET role = 'CLIENTE' WHERE (github_id IS NOT NULL OR google_id IS NOT NULL) AND role = 'VENTAS'")
                 with conn.cursor() as cursor:
                     cursor.executemany("""
                     INSERT INTO users (username, password_hash, full_name, email, store_name, role)
@@ -184,7 +187,8 @@ def roles_required(*allowed_roles):
         def wrapped_view(**kwargs):
             if session.get("role") not in allowed_roles:
                 flash("Tu perfil no tiene permiso para realizar esta operación.", "error")
-                return redirect(url_for("inventory"))
+                destination = "catalog" if session.get("role") == "CLIENTE" else "inventory"
+                return redirect(url_for(destination))
             return view(**kwargs)
         return wrapped_view
     return decorator
@@ -203,11 +207,13 @@ def identify_backend(response):
 
 @app.context_processor
 def template_context():
+    cart_count = sum(int(quantity) for quantity in session.get("cart", {}).values())
     return {
         "backend_id": app.config["BACKEND_ID"],
         "github_enabled": bool(app.config["GITHUB_CLIENT_ID"] and app.config["GITHUB_CLIENT_SECRET"]),
         "google_enabled": bool(app.config["GOOGLE_CLIENT_ID"] and app.config["GOOGLE_CLIENT_SECRET"]),
         "role_names": ROLES,
+        "cart_count": cart_count,
     }
 
 def issue_internal_jwt(user, provider):
@@ -237,7 +243,7 @@ def complete_login(user, provider):
     session["role"] = user["role"]
     session["auth_provider"] = provider
     token = issue_internal_jwt(user, provider)
-    response = redirect(url_for("inventory"))
+    response = redirect(url_for("catalog") if user["role"] == "CLIENTE" else url_for("inventory"))
     response.set_cookie(
         "techstore_access_token",
         token,
@@ -443,7 +449,7 @@ def github_callback():
                 profile.get("name") or profile["login"],
                 email,
                 app.config["GITHUB_DEFAULT_STORE"],
-                "VENTAS",
+                "CLIENTE",
                 github_id,
             )).fetchone()
         else:
@@ -529,7 +535,7 @@ def google_callback():
                 profile.get("name") or email,
                 email,
                 app.config["GOOGLE_DEFAULT_STORE"],
-                "VENTAS",
+                "CLIENTE",
                 google_id,
             )).fetchone()
         else:
@@ -556,8 +562,75 @@ def product_state(product):
         return "low"
     return "healthy"
 
+@app.get("/catalog")
+@roles_required("CLIENTE")
+def catalog():
+    products = get_db().execute("""
+        SELECT id, sku, name, category, brand, stock, price, description, store_name
+        FROM products
+        WHERE active = TRUE AND stock > 0 AND store_name = %s
+        ORDER BY category, name
+    """, (g.store_name,)).fetchall()
+    cart = session.get("cart", {})
+    selected = []
+    total = Decimal("0")
+    if cart:
+        ids = [int(product_id) for product_id in cart]
+        items = get_db().execute("""
+            SELECT id, sku, name, brand, stock, price FROM products
+            WHERE id = ANY(%s) AND active = TRUE
+        """, (ids,)).fetchall()
+        for item in items:
+            quantity = min(int(cart.get(str(item["id"]), 0)), item["stock"])
+            if quantity > 0:
+                subtotal = item["price"] * quantity
+                selected.append({**item, "quantity": quantity, "subtotal": subtotal})
+                total += subtotal
+    return render_template("catalog.html", products=products, selected=selected, total=total)
+
+@app.post("/catalog/select/<int:product_id>")
+@roles_required("CLIENTE")
+def select_product(product_id):
+    product = get_db().execute("""
+        SELECT id, name, stock FROM products
+        WHERE id = %s AND active = TRUE AND store_name = %s
+    """, (product_id, g.store_name)).fetchone()
+    if product is None or product["stock"] < 1:
+        flash("El producto no está disponible en tu tienda.", "error")
+        return redirect(url_for("catalog"))
+    try:
+        quantity = int(request.form.get("quantity", "1"))
+    except ValueError:
+        quantity = 1
+    quantity = max(1, min(quantity, product["stock"]))
+    cart = dict(session.get("cart", {}))
+    current = int(cart.get(str(product_id), 0))
+    cart[str(product_id)] = min(current + quantity, product["stock"])
+    session["cart"] = cart
+    flash(f"{product['name']} agregado a tu selección.", "success")
+    return redirect(url_for("catalog"))
+
+@app.post("/catalog/remove/<int:product_id>")
+@roles_required("CLIENTE")
+def remove_selection(product_id):
+    cart = dict(session.get("cart", {}))
+    cart.pop(str(product_id), None)
+    session["cart"] = cart
+    flash("Producto retirado de tu selección.", "success")
+    return redirect(url_for("catalog"))
+
+@app.post("/catalog/confirm")
+@roles_required("CLIENTE")
+def confirm_selection():
+    if not session.get("cart"):
+        flash("Selecciona al menos un producto antes de continuar.", "error")
+    else:
+        flash("Selección registrada para demostración. No se realizó ningún cobro.", "success")
+        session["cart"] = {}
+    return redirect(url_for("catalog"))
+
 @app.get("/")
-@login_required
+@roles_required("ADMINISTRADOR", "GERENTE", "VENTAS", "AUDITOR")
 def inventory():
     scope_sql = "" if g.role in ("ADMINISTRADOR", "AUDITOR") else "WHERE store_name = %s"
     scope_params = () if not scope_sql else (g.store_name,)

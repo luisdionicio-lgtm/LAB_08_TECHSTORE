@@ -77,3 +77,27 @@ if ($finalPage.Content -match [regex]::Escape($updatedName)) {
 }
 
 Write-Host "OK: login y CRUD completo (crear, leer, actualizar y eliminar) funcionan a traves de Nginx."
+
+Write-Host "Comprobando vista de Cliente y seleccion de productos"
+$clientSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$catalog = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/login" -Method Post -WebSession $clientSession -Body @{
+    username = "cliente"
+    password = "Cliente123!"
+}
+if ($catalog.Content -notmatch "Elige tu proxima mejora|Elige tu próxima mejora") {
+    throw "La cuenta Cliente no fue redirigida al catalogo."
+}
+$catalogProduct = [regex]::Match($catalog.Content, '/catalog/select/(\d+)')
+if (-not $catalogProduct.Success) {
+    throw "El catalogo no contiene productos seleccionables."
+}
+$catalogProductId = $catalogProduct.Groups[1].Value
+$selection = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/catalog/select/$catalogProductId" -Method Post -WebSession $clientSession -Body @{ quantity = "2" }
+if ($selection.Content -notmatch "Total referencial") {
+    throw "El producto no se agrego a la seleccion del Cliente."
+}
+$blocked = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/" -WebSession $clientSession
+if ($blocked.Content -notmatch "no tiene permiso") {
+    throw "El Cliente pudo acceder a una superficie administrativa."
+}
+Write-Host "OK: catalogo, seleccion de productos y aislamiento del perfil Cliente funcionan."
