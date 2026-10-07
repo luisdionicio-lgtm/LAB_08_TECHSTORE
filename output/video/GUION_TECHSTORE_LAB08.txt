@@ -1,0 +1,46 @@
+GUION VIDEO TECHSTORE LAB08
+
+01. Presentación
+Presentamos TechStore, el sistema de inventario desarrollado para el Laboratorio 08. La demostración se ejecuta localmente con Docker y conserva una arquitectura distribuida: Nginx balancea solicitudes entre tres instancias Flask y PostgreSQL mantiene los datos compartidos. Revisaremos autenticación básica, seguridad, roles, GitHub con MFA y la experiencia del cliente.
+
+02. Arquitectura local
+Docker Compose inicia PostgreSQL y el contenedor de aplicación. Dentro de este último trabajan Nginx y tres backends identificados como backend uno, dos y tres. El navegador utiliza un único punto de entrada en el puerto ochenta ochenta. Las pruebas automáticas confirman una distribución uniforme mediante Round Robin, sin usar servicios de AWS.
+
+03. Pantalla de acceso
+La página principal permite autenticación básica y muestra accesos visuales para Gmail y GitHub. Las cuentas de prueba representan administrador, gerente, ventas, auditor y cliente. La interfaz también informa las reglas aplicadas: JWT interno válido por sesenta minutos, bloqueo temporal por intentos fallidos y tienda asignada.
+
+04. Validación de credenciales
+Para comprobar la protección, ingresamos una contraseña incorrecta. El sistema no revela si falló el usuario o la clave y registra el intento en PostgreSQL. La cuenta dispone de un máximo de tres intentos para esta demostración, de acuerdo con la adaptación solicitada para evidenciar el control durante el laboratorio.
+
+05. Bloqueo temporal
+Después del tercer intento incorrecto, TechStore bloquea la cuenta durante un minuto. Incluso si se escribe la contraseña correcta antes de finalizar ese periodo, el acceso se rechaza. Esta medida limita ataques repetitivos y ofrece una evidencia clara sin obligar a esperar varios minutos durante la exposición.
+
+06. Acceso correcto y JWT
+Con credenciales válidas, el administrador ingresa al inventario y el servidor genera un JWT interno con duración de sesenta minutos. La cookie se configura como HTTP only y SameSite Lax. Cada ruta protegida valida el token, el identificador del usuario, el rol y la tienda antes de permitir la operación.
+
+07. Cookie y sesión protegida
+La evidencia del navegador muestra la cookie techstore access token sin exponer su contenido completo. También aparece la sesión de Flask. En una entrega real nunca deben publicarse tokens, Client Secrets ni contraseñas. Para el laboratorio basta demostrar el nombre de la cookie, su dominio local, vencimiento y protección HTTP only.
+
+08. Usuarios y roles
+El administrador gestiona usuarios, tiendas y perfiles desde una vista central. El gerente administra productos de su tienda; ventas consulta productos y actualiza existencias; el auditor trabaja en modo de lectura; y el cliente utiliza el catálogo. Las restricciones se aplican en el backend, no solamente ocultando botones en la interfaz.
+
+09. GitHub OAuth
+El inicio social funcional se realiza con GitHub OAuth dos punto cero. El usuario revisa el nombre de TechStore y los permisos solicitados, limitados al perfil básico y correo. GitHub devuelve un código temporal al callback local, y TechStore valida el parámetro state para impedir solicitudes falsificadas.
+
+10. MFA con TOTP
+Después de GitHub, TechStore exige un segundo factor. El usuario escanea un código QR con Google Authenticator o una aplicación compatible. El TOTP contiene seis dígitos y cambia cada treinta segundos. El JWT definitivo solo se emite después de validar correctamente este segundo factor.
+
+11. Errores de MFA
+El formulario MFA permite como máximo tres códigos incorrectos. Cada fallo indica los intentos restantes sin mostrar la clave secreta. Si se alcanza el límite, se cancela la autenticación pendiente y el usuario debe comenzar nuevamente desde GitHub. Así se protegen tanto la identidad principal como el segundo factor.
+
+12. Catálogo del cliente
+El perfil Cliente recibe una vista distinta. Puede buscar productos, elegir cantidades y construir una selección con total referencial, pero no modificar precios, usuarios ni inventario administrativo. Las imágenes tecnológicas son referenciales y la confirmación académica no procesa pagos ni genera pedidos reales.
+
+13. Gmail en la interfaz
+El acceso con Gmail se conserva como demostración visual mediante el ícono multicolor solicitado. No se presenta como autenticación activa porque la cuenta institucional no autorizó crear un proyecto de Google Cloud. Esta decisión evita simular credenciales inexistentes y mantiene la evidencia técnicamente correcta.
+
+14. Verificación integral
+La prueba local valida doce solicitudes de salud, cuatro por cada backend; inicio de sesión; creación, lectura, actualización y eliminación de productos; catálogo del cliente; selección de artículos y aislamiento de permisos. PostgreSQL conserva la misma información mientras Nginx distribuye las solicitudes entre las tres instancias.
+
+15. Conclusiones
+TechStore demuestra que la seguridad debe aplicarse en varias capas. El login controla credenciales y bloqueos; el JWT protege rutas; los roles limitan operaciones; GitHub valida la identidad; y TOTP agrega un segundo factor. Docker permite reproducir la arquitectura local y las pruebas confirman que seguridad, inventario y catálogo funcionan de forma consistente.
