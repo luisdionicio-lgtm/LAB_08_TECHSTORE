@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
@@ -33,6 +34,19 @@ app.config.update(
 
 LOCKOUT_MINUTES = 1
 MAX_LOGIN_ATTEMPTS = 3
+ROLES = {
+    "ADMINISTRADOR": "Administrador del Sistema",
+    "GERENTE": "Gerente de Tienda",
+    "VENTAS": "Empleado de Ventas",
+    "AUDITOR": "Auditor",
+}
+
+DEMO_USERS = (
+    ("admin", "Admin123!", "Administrador TechStore", "admin@techstore.local", "TechStore Lima Centro", "ADMINISTRADOR"),
+    ("gerente", "Gerente123!", "Gerente Lima Centro", "gerente@techstore.local", "TechStore Lima Centro", "GERENTE"),
+    ("ventas", "Ventas123!", "Empleado de Ventas", "ventas@techstore.local", "TechStore Lima Centro", "VENTAS"),
+    ("auditor", "Auditor123!", "Auditor TechStore", "auditor@techstore.local", "Todas las tiendas", "AUDITOR"),
+)
 
 DEMO_PRODUCTS = (
     ("TS-GAM-407", "PC Gamer Nebula RTX 4070", "Computadoras", "TechStore Build", 4, 3, "6299.00", "Equipo gamer con Ryzen 7, GeForce RTX 4070, 32 GB DDR5 y SSD NVMe de 1 TB."),
@@ -68,7 +82,7 @@ def init_db():
                         full_name VARCHAR(160),
                         email VARCHAR(180),
                         store_name VARCHAR(120) NOT NULL DEFAULT 'TechStore Lima Centro',
-                        role VARCHAR(40) NOT NULL DEFAULT 'EMPLEADO',
+                        role VARCHAR(40) NOT NULL DEFAULT 'VENTAS',
                         github_id VARCHAR(80),
                         google_id VARCHAR(255),
                         failed_attempts INTEGER NOT NULL DEFAULT 0,
@@ -84,6 +98,7 @@ def init_db():
                         min_stock INTEGER NOT NULL DEFAULT 0 CHECK (min_stock >= 0),
                         price NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
                         description TEXT NOT NULL DEFAULT '',
+                        store_name VARCHAR(120) NOT NULL DEFAULT 'TechStore Lima Centro',
                         active BOOLEAN NOT NULL DEFAULT TRUE,
                         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -92,25 +107,30 @@ def init_db():
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(160)")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(180)")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS store_name VARCHAR(120) NOT NULL DEFAULT 'TechStore Lima Centro'")
-                conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(40) NOT NULL DEFAULT 'EMPLEADO'")
+                conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(40) NOT NULL DEFAULT 'VENTAS'")
+                conn.execute("UPDATE users SET role = 'VENTAS' WHERE role = 'EMPLEADO'")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id VARCHAR(80)")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255)")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts INTEGER NOT NULL DEFAULT 0")
                 conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ")
+                conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS store_name VARCHAR(120) NOT NULL DEFAULT 'TechStore Lima Centro'")
                 conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_github_id_unique ON users (github_id) WHERE github_id IS NOT NULL")
                 conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_unique ON users (google_id) WHERE google_id IS NOT NULL")
-                conn.execute(
-                    """
+                conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users (lower(email)) WHERE email IS NOT NULL")
+                with conn.cursor() as cursor:
+                    cursor.executemany("""
                     INSERT INTO users (username, password_hash, full_name, email, store_name, role)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (username) DO UPDATE SET
+                        password_hash = EXCLUDED.password_hash,
                         full_name = EXCLUDED.full_name,
                         email = EXCLUDED.email,
                         store_name = EXCLUDED.store_name,
                         role = EXCLUDED.role
-                    """,
-                    ("admin", generate_password_hash("admin123"), "Administrador TechStore", "admin@techstore.local", "TechStore Lima Centro", "ADMINISTRADOR"),
-                )
+                    """, [
+                        (username, generate_password_hash(password), full_name, email, store_name, role)
+                        for username, password, full_name, email, store_name, role in DEMO_USERS
+                    ])
                 with conn.cursor() as cursor:
                     cursor.executemany("""
                         INSERT INTO products
@@ -147,11 +167,24 @@ def login_required(view):
         return view(**kwargs)
     return wrapped_view
 
+def roles_required(*allowed_roles):
+    def decorator(view):
+        @wraps(view)
+        @login_required
+        def wrapped_view(**kwargs):
+            if session.get("role") not in allowed_roles:
+                flash("Tu perfil no tiene permiso para realizar esta operación.", "error")
+                return redirect(url_for("inventory"))
+            return view(**kwargs)
+        return wrapped_view
+    return decorator
+
 @app.before_request
 def load_user():
     g.user = session.get("username")
     g.store_name = session.get("store_name")
     g.auth_provider = session.get("auth_provider")
+    g.role = session.get("role")
 
 @app.after_request
 def identify_backend(response):
@@ -164,6 +197,7 @@ def template_context():
         "backend_id": app.config["BACKEND_ID"],
         "github_enabled": bool(app.config["GITHUB_CLIENT_ID"] and app.config["GITHUB_CLIENT_SECRET"]),
         "google_enabled": bool(app.config["GOOGLE_CLIENT_ID"] and app.config["GOOGLE_CLIENT_SECRET"]),
+        "role_names": ROLES,
     }
 
 def issue_internal_jwt(user, provider):
@@ -330,7 +364,7 @@ def github_callback():
                 profile.get("name") or profile["login"],
                 email,
                 app.config["GITHUB_DEFAULT_STORE"],
-                "EMPLEADO",
+                "VENTAS",
                 github_id,
             )).fetchone()
         else:
@@ -416,7 +450,7 @@ def google_callback():
                 profile.get("name") or email,
                 email,
                 app.config["GOOGLE_DEFAULT_STORE"],
-                "EMPLEADO",
+                "VENTAS",
                 google_id,
             )).fetchone()
         else:
@@ -446,12 +480,15 @@ def product_state(product):
 @app.get("/")
 @login_required
 def inventory():
-    products = get_db().execute("""
+    scope_sql = "" if g.role in ("ADMINISTRADOR", "AUDITOR") else "WHERE store_name = %s"
+    scope_params = () if not scope_sql else (g.store_name,)
+    products = get_db().execute(f"""
         SELECT id, sku, name, category, brand, stock, min_stock, price,
-               description, active, created_at, updated_at
+               description, active, store_name, created_at, updated_at
         FROM products
+        {scope_sql}
         ORDER BY active DESC, stock ASC, name ASC
-    """).fetchall()
+    """, scope_params).fetchall()
     for product in products:
         product["state"] = product_state(product)
     active_products = [product for product in products if product["active"]]
@@ -486,7 +523,7 @@ def parse_product_form():
     return values, None
 
 @app.route("/products/new", methods=("GET", "POST"))
-@login_required
+@roles_required("ADMINISTRADOR", "GERENTE")
 def create_product():
     product = None
     if request.method == "POST":
@@ -498,10 +535,10 @@ def create_product():
                 with get_db() as conn:
                     conn.execute("""
                         INSERT INTO products
-                            (sku, name, category, brand, stock, min_stock, price, description, active)
+                            (sku, name, category, brand, stock, min_stock, price, description, active, store_name)
                         VALUES (%(sku)s, %(name)s, %(category)s, %(brand)s, %(stock)s,
-                                %(min_stock)s, %(price)s, %(description)s, %(active)s)
-                    """, product)
+                                %(min_stock)s, %(price)s, %(description)s, %(active)s, %(store_name)s)
+                    """, {**product, "store_name": g.store_name})
                 flash("Producto registrado correctamente.", "success")
                 return redirect(url_for("inventory"))
             except psycopg.errors.UniqueViolation:
@@ -510,18 +547,32 @@ def create_product():
 
 def find_product(product_id):
     product = get_db().execute("""
-        SELECT id, sku, name, category, brand, stock, min_stock, price, description, active
+        SELECT id, sku, name, category, brand, stock, min_stock, price, description, active, store_name
         FROM products WHERE id = %s
     """, (product_id,)).fetchone()
     if product is None:
         abort(404)
+    if g.role in ("GERENTE", "VENTAS") and product["store_name"] != g.store_name:
+        abort(403)
     return product
 
 @app.route("/products/<int:product_id>/edit", methods=("GET", "POST"))
-@login_required
+@roles_required("ADMINISTRADOR", "GERENTE", "VENTAS")
 def edit_product(product_id):
     product = find_product(product_id)
     if request.method == "POST":
+        if g.role == "VENTAS":
+            try:
+                stock = int(request.form.get("stock", ""))
+                if stock < 0:
+                    raise ValueError
+            except ValueError:
+                flash("El stock debe ser un número entero mayor o igual que cero.", "error")
+                return render_template("task_form.html", product=product, stock_only=True)
+            with get_db() as conn:
+                conn.execute("UPDATE products SET stock = %s, updated_at = NOW() WHERE id = %s", (stock, product_id))
+            flash("Stock actualizado correctamente.", "success")
+            return redirect(url_for("inventory"))
         values, error = parse_product_form()
         values["id"] = product_id
         if error:
@@ -542,16 +593,75 @@ def edit_product(product_id):
                 return redirect(url_for("inventory"))
             except psycopg.errors.UniqueViolation:
                 flash("El SKU ya pertenece a otro producto.", "error")
-    return render_template("task_form.html", product=product)
+    return render_template("task_form.html", product=product, stock_only=g.role == "VENTAS")
 
 @app.post("/products/<int:product_id>/delete")
-@login_required
+@roles_required("ADMINISTRADOR", "GERENTE")
 def delete_product(product_id):
     find_product(product_id)
     with get_db() as conn:
         conn.execute("DELETE FROM products WHERE id = %s", (product_id,))
     flash("Producto eliminado del inventario.", "success")
     return redirect(url_for("inventory"))
+
+def valid_password(password):
+    return (
+        len(password) >= 8
+        and re.search(r"[A-Z]", password)
+        and re.search(r"\d", password)
+        and re.search(r"[^A-Za-z0-9]", password)
+    )
+
+@app.route("/users", methods=("GET", "POST"))
+@roles_required("ADMINISTRADOR")
+def manage_users():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip().lower()
+        email = request.form.get("email", "").strip().lower()
+        full_name = request.form.get("full_name", "").strip()
+        store_name = request.form.get("store_name", "").strip()
+        role = request.form.get("role", "")
+        password = request.form.get("password", "")
+        if not all((username, email, full_name, store_name)) or role not in ROLES:
+            flash("Completa todos los datos y selecciona un perfil válido.", "error")
+        elif not valid_password(password):
+            flash("La contraseña debe tener 8 caracteres, una mayúscula, un número y un carácter especial.", "error")
+        else:
+            try:
+                with get_db() as conn:
+                    conn.execute("""
+                        INSERT INTO users (username, password_hash, full_name, email, store_name, role)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (username, generate_password_hash(password), full_name, email, store_name, role))
+                flash("Usuario registrado y perfil asignado correctamente.", "success")
+                return redirect(url_for("manage_users"))
+            except psycopg.errors.UniqueViolation:
+                flash("El usuario o correo ya está registrado.", "error")
+    users = get_db().execute("""
+        SELECT id, username, full_name, email, store_name, role,
+               github_id IS NOT NULL AS uses_github,
+               google_id IS NOT NULL AS uses_google
+        FROM users ORDER BY id
+    """).fetchall()
+    return render_template("users.html", users=users, roles=ROLES)
+
+@app.post("/users/<int:user_id>/assignment")
+@roles_required("ADMINISTRADOR")
+def assign_user(user_id):
+    role = request.form.get("role", "")
+    store_name = request.form.get("store_name", "").strip()
+    if role not in ROLES or not store_name:
+        flash("Selecciona un perfil y una tienda válidos.", "error")
+    elif user_id == session["user_id"] and role != "ADMINISTRADOR":
+        flash("No puedes retirar tu propio perfil de administrador.", "error")
+    else:
+        with get_db() as conn:
+            updated = conn.execute(
+                "UPDATE users SET role = %s, store_name = %s WHERE id = %s RETURNING id",
+                (role, store_name, user_id),
+            ).fetchone()
+        flash("Perfil y tienda actualizados." if updated else "Usuario no encontrado.", "success" if updated else "error")
+    return redirect(url_for("manage_users"))
 
 if os.environ.get("SKIP_DB_INIT") != "1":
     init_db()

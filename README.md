@@ -47,12 +47,16 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Abra `http://localhost:8080` e ingrese con:
+Abra `http://localhost:8080` y pruebe los cuatro perfiles:
 
-- Usuario: `admin`
-- Contraseña: `admin123`
+| Perfil | Usuario | Contraseña |
+|---|---|---|
+| Administrador del Sistema | `admin` | `Admin123!` |
+| Gerente de Tienda | `gerente` | `Gerente123!` |
+| Empleado de Ventas | `ventas` | `Ventas123!` |
+| Auditor | `auditor` | `Auditor123!` |
 
-El acceso acepta el nombre `admin` o el correo `admin@techstore.local`. La cuenta pertenece a `TechStore Lima Centro`.
+El Administrador gestiona cuentas y roles; el Gerente administra productos de su tienda; Ventas solo actualiza existencias; y el Auditor trabaja en modo de lectura.
 
 ## Configurar GitHub OAuth
 

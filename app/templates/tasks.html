@@ -9,7 +9,7 @@
   </div>
   <div class="hero-heading">
     <div><h1>Inventario tecnológico</h1><p class="muted">{{ g.store_name }} · Sesión {{ {'github':'GitHub OAuth','google':'Google OAuth'}.get(g.auth_provider, 'básica') }} protegida con JWT.</p></div>
-    <a class="primary-button add-button" href="{{ url_for('create_product') }}">Registrar producto</a>
+    {% if g.role in ('ADMINISTRADOR', 'GERENTE') %}<a class="primary-button add-button" href="{{ url_for('create_product') }}">Registrar producto</a>{% endif %}
   </div>
   <div class="architecture-strip" aria-label="Flujo de la arquitectura local">
     <span>Navegador</span><b></b><span class="active">Nginx</span><b></b><span>Backend 1</span><span>Backend 2</span><span>Backend 3</span><b></b><span>PostgreSQL</span>
@@ -48,7 +48,11 @@
           <td data-label="Precio" class="numeric">S/ {{ '{:,.2f}'.format(product.price) }}</td>
           <td data-label="Existencia" class="stock-cell"><strong>{{ product.stock }}</strong><small>Mínimo {{ product.min_stock }}</small><span class="stock-line {{ product.state }}" style="--stock-level: {{ [product.stock * 4, 100]|min }}%"></span></td>
           <td data-label="Estado"><span class="stock-badge {{ product.state }}">{{ {'healthy':'Disponible','low':'Stock bajo','out':'Agotado','inactive':'Inactivo'}[product.state] }}</span></td>
-          <td data-label="Acciones"><div class="row-actions"><a href="{{ url_for('edit_product', product_id=product.id) }}">Editar</a><form method="post" action="{{ url_for('delete_product', product_id=product.id) }}" onsubmit="return confirm('¿Eliminar {{ product.name }} del inventario?')"><button type="submit">Eliminar</button></form></div></td>
+          <td data-label="Acciones"><div class="row-actions">
+            {% if g.role in ('ADMINISTRADOR', 'GERENTE', 'VENTAS') %}<a href="{{ url_for('edit_product', product_id=product.id) }}">{{ 'Actualizar stock' if g.role == 'VENTAS' else 'Editar' }}</a>{% endif %}
+            {% if g.role in ('ADMINISTRADOR', 'GERENTE') %}<form method="post" action="{{ url_for('delete_product', product_id=product.id) }}" onsubmit="return confirm('¿Eliminar {{ product.name }} del inventario?')"><button type="submit">Eliminar</button></form>{% endif %}
+            {% if g.role == 'AUDITOR' %}<span class="read-only-label">Solo lectura</span>{% endif %}
+          </div></td>
         </tr>
       {% endfor %}
       </tbody>

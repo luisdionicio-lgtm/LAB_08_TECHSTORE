@@ -18,6 +18,7 @@
     {% if g.user %}
       <div class="topbar-actions">
         <span class="system-status"><i></i>Arquitectura de 3 backends</span>
+        {% if g.role == 'ADMINISTRADOR' %}<a class="admin-link" href="{{ url_for('manage_users') }}">Usuarios y roles</a>{% endif %}
         <span class="store-chip">{{ g.store_name }}</span>
         <span class="user-chip" aria-label="Usuario actual">{{ g.user[0]|upper }}</span>
         <form method="post" action="{{ url_for('logout') }}"><button class="ghost-button" type="submit">Cerrar sesión</button></form>

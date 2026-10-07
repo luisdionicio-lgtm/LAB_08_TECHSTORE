@@ -48,10 +48,14 @@ Abrir `http://localhost:8080/login`. La pantalla explica el flujo Navegador → 
 
 ## 5. Autenticación básica y JWT
 
-Usar la cuenta demostrativa:
+Usar las cuentas demostrativas:
 
-- Usuario: `admin`
-- Contraseña: `admin123`
+| Perfil | Usuario | Contraseña | Permiso principal |
+|---|---|---|---|
+| Administrador del Sistema | `admin` | `Admin123!` | Control total y gestión de usuarios y roles |
+| Gerente de Tienda | `gerente` | `Gerente123!` | Gestiona productos de su tienda |
+| Empleado de Ventas | `ventas` | `Ventas123!` | Consulta productos y actualiza únicamente el stock |
+| Auditor | `auditor` | `Auditor123!` | Consulta global en modo de solo lectura |
 
 Al validar las credenciales, Flask genera un JWT con duración de 60 minutos y lo guarda en una cookie `HttpOnly`. Después redirige al inventario de la tienda asignada `TechStore Lima Centro`.
 
@@ -152,6 +156,37 @@ docker compose exec -T db psql -U lab07 -d lab07 -c "UPDATE users SET failed_att
 - Mostrar las métricas, el buscador, su estado de stock y el identificador del backend en el pie.
 - Actualizar la página varias veces permite observar distintos backends sin perder los datos, demostrando la persistencia común.
 - Pie sugerido: **Figura 8. Producto persistido en PostgreSQL y visible desde los backends balanceados.**
+
+## 8A. Usuarios y control de acceso por roles
+
+Inicie sesión como `admin` con `Admin123!` y seleccione **Usuarios y roles**. El Administrador puede registrar cuentas y cambiar el perfil o la tienda asignada.
+
+### Captura 8A — Administración de usuarios
+
+- Mostrar el formulario de registro y la tabla con las cuatro cuentas.
+- Deben verse Administrador del Sistema, Gerente de Tienda, Empleado de Ventas y Auditor.
+- Pie sugerido: **Figura 8A. Gestión centralizada de cuentas, perfiles y tiendas por el Administrador.**
+
+Pruebe después cada perfil cerrando sesión:
+
+- `gerente / Gerente123!`: puede registrar, editar y eliminar productos de TechStore Lima Centro; no accede a Usuarios y roles.
+- `ventas / Ventas123!`: solo ve la acción **Actualizar stock**; el precio y los datos comerciales permanecen protegidos.
+- `auditor / Auditor123!`: consulta el inventario completo y cada fila indica **Solo lectura**.
+
+### Captura 8B — Perfil Gerente
+
+- Mostrar el inventario con **Registrar producto**, **Editar** y **Eliminar**.
+- Pie sugerido: **Figura 8B. Gerente gestionando productos correspondientes a su tienda.**
+
+### Captura 8C — Perfil Ventas
+
+- Abrir **Actualizar stock** y mostrar que solo la existencia es editable.
+- Pie sugerido: **Figura 8C. Empleado de Ventas actualizando existencias sin permiso para modificar precios.**
+
+### Captura 8D — Perfil Auditor
+
+- Mostrar el inventario con la etiqueta **Solo lectura** y sin botones de modificación.
+- Pie sugerido: **Figura 8D. Auditor consultando el inventario sin permisos de modificación.**
 
 ## 9. Evidencia de Round Robin
 

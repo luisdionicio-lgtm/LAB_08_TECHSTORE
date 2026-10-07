@@ -4,13 +4,17 @@
 <section class="form-layout product-form-layout">
   <aside class="form-aside">
     <a class="back-link" href="{{ url_for('inventory') }}">← Volver al inventario</a>
-    <h1>{{ 'Actualizar producto' if product and product.id else 'Registrar producto' }}</h1>
-    <p>Los cambios se guardan en PostgreSQL y quedan disponibles para las tres instancias inmediatamente.</p>
+    <h1>{{ 'Actualizar stock' if stock_only else ('Actualizar producto' if product and product.id else 'Registrar producto') }}</h1>
+    <p>{{ 'Tu perfil de Ventas puede modificar la existencia sin alterar precios ni datos comerciales.' if stock_only else 'Los cambios se guardan en PostgreSQL y quedan disponibles para las tres instancias inmediatamente.' }}</p>
     <dl class="form-guide"><div><dt>Identificación</dt><dd>SKU único, nombre, marca y categoría.</dd></div><div><dt>Control</dt><dd>Stock actual, umbral mínimo y precio.</dd></div><div><dt>Persistencia</dt><dd>Datos compartidos por todos los backends.</dd></div></dl>
   </aside>
   <section class="form-card">
     <div class="form-card-heading"><span class="form-icon" aria-hidden="true">TS</span><div><h2>Información del producto</h2><p class="muted">Completa los campos obligatorios.</p></div></div>
     <form method="post" class="stack product-form">
+      {% if stock_only %}
+      <div class="stock-only-summary"><strong>{{ product.name }}</strong><span>{{ product.brand }} · {{ product.sku }}</span><small>Precio protegido: S/ {{ '{:,.2f}'.format(product.price) }}</small></div>
+      <div><label for="stock">Stock actual</label><input id="stock" type="number" name="stock" min="0" required value="{{ product.stock }}"></div>
+      {% else %}
       <div class="field-grid two">
         <div><label for="sku">SKU <span class="required">Obligatorio</span></label><input id="sku" name="sku" maxlength="40" placeholder="TS-NBK-001" required value="{{ product.sku if product else '' }}"></div>
         <div><label for="name">Nombre <span class="required">Obligatorio</span></label><input id="name" name="name" maxlength="160" placeholder="Laptop Lenovo IdeaPad Slim 3" required value="{{ product.name if product else '' }}"></div>
@@ -26,6 +30,7 @@
       </div>
       <div><label for="description">Descripción técnica</label><textarea id="description" name="description" rows="4" placeholder="Características relevantes para identificar el producto...">{{ product.description if product else '' }}</textarea></div>
       <label class="status-switch"><input type="checkbox" name="active" {% if not product or product.active %}checked{% endif %}><span class="switch" aria-hidden="true"><i></i></span><span><strong>Producto activo</strong><small>Disponible para consulta y operaciones de inventario.</small></span></label>
+      {% endif %}
       <div class="form-actions"><a class="secondary-button" href="{{ url_for('inventory') }}">Cancelar</a><button class="primary-button" type="submit">Guardar producto</button></div>
     </form>
   </section>

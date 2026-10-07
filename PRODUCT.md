@@ -32,6 +32,9 @@ El proyecto se ejecuta con Docker Compose. Nginx recibe las solicitudes, aplica 
 - Bloqueo de cuenta durante 1 minuto después de tres intentos fallidos; contador atómico para tres backends.
 - Tienda y rol asignados a cada usuario.
 - CRUD de productos tecnológicos con inventario compartido.
+- Cuatro perfiles con control de acceso: Administrador, Gerente de Tienda, Empleado de Ventas y Auditor.
+- Administración de cuentas, roles y tienda asignada disponible únicamente para el Administrador.
+- Gerente limitado a productos de su tienda; Ventas limitado a actualizar stock; Auditor en modo de solo lectura.
 - Conservación de Nginx, tres backends y PostgreSQL.
 - La arquitectura debe seguir siendo demostrable mediante la cabecera y el indicador del backend que atendió cada solicitud.
 

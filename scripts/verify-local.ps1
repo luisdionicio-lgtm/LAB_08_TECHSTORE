@@ -22,7 +22,7 @@ Write-Host "Comprobando LOGIN y CRUD mediante Nginx"
 $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/login" -Method Post -WebSession $session -Body @{
     username = "admin"
-    password = "admin123"
+    password = "Admin123!"
 } | Out-Null
 
 $stamp = Get-Date -Format 'yyyyMMddHHmmss'
